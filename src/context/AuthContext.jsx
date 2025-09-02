@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import axiosConfig from "../axios/config.js";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 const AuthContexProvider = ({ children }) => {
@@ -9,8 +10,8 @@ const AuthContexProvider = ({ children }) => {
   );
   const [openProfile, setOpenProfile] = useState(false);
 
-  const login = async (data) => {
-    const res = await axiosConfig.post("/api/auth/login", data);
+  const login = async ({ email, password }) => {
+    const res = await axiosConfig.post("/api/auth/login", { email, password });
     if (!res.data.user) return res;
     setUser(res.data?.user);
     return res;
@@ -19,15 +20,15 @@ const AuthContexProvider = ({ children }) => {
   const logout = async () => {
     const res = await axiosConfig.post("/api/auth/logout");
     setUser(null);
-    return res;
+    return res.data?.message;
   };
 
   const register = async (data) => {
     const res = await axiosConfig.post("/api/auth/signup", data);
-    return res;
+    return res.data;
   };
 
-  const handleLoginWithGoogle = async (credentialResponse) => {
+  const loginWithGoogle = async (credentialResponse) => {
     try {
       const res = await axiosConfig.post(`/api/auth/google-auth`, {
         token: credentialResponse.credential,
@@ -50,7 +51,7 @@ const AuthContexProvider = ({ children }) => {
         logout,
         register,
         setUser,
-        handleLoginWithGoogle,
+        loginWithGoogle,
         openProfile,
         setOpenProfile,
       }}

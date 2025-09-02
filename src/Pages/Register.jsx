@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useMutation } from "@tanstack/react-query";
-import { register as registerAPI } from "../services/authService.jsx";
 import VerifyEmail from "./Verifyemail.jsx";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 const schema = yup.object().shape({
   name: yup.string().required("Vui lòng nhập họ tên"),
@@ -29,6 +29,7 @@ const Register = () => {
   const [openVerify, setOpenVerify] = useState(false);
   const [userId, setUserId] = useState(null);
 
+  const { register: registerAPI } = useContext(AuthContext);
   const {
     register,
     handleSubmit,

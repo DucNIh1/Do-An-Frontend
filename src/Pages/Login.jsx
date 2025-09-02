@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { GoogleLogin } from "@react-oauth/google";
@@ -7,11 +7,8 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useMutation } from "@tanstack/react-query";
-import {
-  login as loginAPI,
-  loginWithGoogle,
-} from "../services/authService.jsx";
 import VerifyEmail from "./Verifyemail.jsx";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 const schema = yup.object().shape({
   email: yup
@@ -29,6 +26,8 @@ const Login = () => {
   const [openVerify, setOpenVerify] = useState(false);
   const [userId, setUserId] = useState(null);
 
+  const { login: loginAPI, loginWithGoogle } = useContext(AuthContext);
+  console.log(loginWithGoogle);
   const {
     register,
     handleSubmit,
