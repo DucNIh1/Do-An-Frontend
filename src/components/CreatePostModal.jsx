@@ -68,7 +68,6 @@ const CreatePostModal = () => {
       let createdPost = null;
 
       createdPost = await createPostAPI(formData);
-      console.log(createdPost);
       const postId = createdPost.data?.id;
 
       if (selectedImages.length > 0) {

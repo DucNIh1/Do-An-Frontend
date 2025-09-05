@@ -1,15 +1,74 @@
-import { NavLink } from "react-router";
-import { useState } from "react";
-import { MdMenu } from "react-icons/md";
+import { NavLink, useNavigate } from "react-router";
+import { useState, useRef, useEffect, useContext } from "react";
+import { MdMenu, MdKeyboardArrowDown } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
+import { FiUser, FiLogOut, FiSettings } from "react-icons/fi";
+import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
+
 const Header = () => {
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  const userMenuRef = useRef(null);
 
   const navLinks = [
     { name: "Trang chủ", path: "/" },
     { name: "Tư vấn hỏi đáp", path: "/tu-van-hoi-dap" },
     { name: "Bài đăng", path: "/posts" },
   ];
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      localStorage.removeItem("user");
+    } catch {
+      toast.error("Có lỗi xảy ra, vui lòng thử lại!!");
+    }
+    setIsUserMenuOpen(false);
+  };
+
+  const UserAvatar = ({ src, alt, size = "w-8 h-8" }) => {
+    const [imgError, setImgError] = useState(false);
+
+    if (imgError || !src) {
+      return (
+        <div
+          className={`${size} bg-deepBlue rounded-full flex items-center justify-center text-white text-sm font-medium`}
+        >
+          {user.name.charAt(0).toUpperCase()}
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={`${size} rounded-full object-cover`}
+        onError={() => setImgError(true)}
+      />
+    );
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 p-4 z-[999] shadow-lg h-20 bg-white">
@@ -38,7 +97,7 @@ const Header = () => {
                 </NavLink>
                 <span
                   className={`
-                    absolute left-0 -bottom-1 h-[2px] w-full origin-left scale-x-0 bg-current transition-transform duration-300 
+                    absolute left-0 -bottom-1 h-[2px] w-full origin-left scale-x-0 bg-current transition-transform duration-300
                     group-hover:scale-x-100
                   `}
                 />
@@ -54,6 +113,77 @@ const Header = () => {
             <img src="/logo/vn.webp" alt="VN" className="w-8 sm:w-10" />
             <img src="/logo/en.webp" alt="EN" className="w-8 sm:w-10" />
           </div>
+
+          <div className="relative">
+            {!user ? (
+              <button
+                onClick={handleLogin}
+                className="gap-2 px-4 py-2 border group border-deepBlue text-deepBlue rounded-lg hover:bg-deepBlue  transition-all duration-200"
+              >
+                <span className="text-sm font-medium group-hover:text-white">
+                  Đăng nhập
+                </span>
+              </button>
+            ) : (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                >
+                  <UserAvatar src={user.avatar} alt={user.name} />
+                  <span className="text-sm font-medium text-gray-700 max-w-20 truncate">
+                    {user.name}
+                  </span>
+                  <MdKeyboardArrowDown
+                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                      isUserMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border py-2 z-50">
+                    <div className="px-4 py-3 border-b">
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          src={user.avatar}
+                          alt={user.name}
+                          size="w-10 h-10"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="py-1">
+                      <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3">
+                        <FiUser className="w-4 h-4" />
+                        Thông tin cá nhân
+                      </button>
+                      <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3">
+                        <FiSettings className="w-4 h-4" />
+                        Cài đặt
+                      </button>
+                      <hr className="my-1" />
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
+                      >
+                        <FiLogOut className="w-4 h-4" />
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </nav>
 
         <button
@@ -68,6 +198,7 @@ const Header = () => {
         </button>
       </div>
 
+      {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden bg-white shadow-lg border-t mt-2 rounded-lg">
           <ul className="flex flex-col gap-3 p-4 text-sm">
@@ -93,9 +224,51 @@ const Header = () => {
                 Tư vấn xét tuyển
               </button>
             </li>
-            <li className="flex gap-3">
+            <li className="flex gap-3 items-center">
               <img src="/logo/vn.webp" alt="VN" className="w-8" />
               <img src="/logo/en.webp" alt="EN" className="w-8" />
+            </li>
+
+            {/* Mobile Auth Section */}
+            <li className="pt-3 border-t">
+              {!user ? (
+                <button
+                  onClick={handleLogin}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-deepBlue text-deepBlue rounded-lg hover:bg-deepBlue hover:text-white transition-all duration-200"
+                >
+                  <FiUser className="w-4 h-4" />
+                  <span className="text-sm font-medium">Đăng nhập</span>
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                    <UserAvatar src={user.avatar} alt={user.name} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-3">
+                    <FiUser className="w-4 h-4" />
+                    Thông tin cá nhân
+                  </button>
+                  <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-3">
+                    <FiSettings className="w-4 h-4" />
+                    Cài đặt
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-3"
+                  >
+                    <FiLogOut className="w-4 h-4" />
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
             </li>
           </ul>
         </div>

@@ -1,38 +1,43 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import { toast } from "react-toastify";
+import { useForm } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
 
-// Icons
-import { AiOutlineClose } from "react-icons/ai";
+import { AiFillLike, AiOutlineClose, AiOutlineLike } from "react-icons/ai";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { FaRegPaperPlane } from "react-icons/fa";
+import { BsImages } from "react-icons/bs";
+import { IoClose } from "react-icons/io5";
+import {
+  checkUserLikedAPI,
+  createCommentAPI,
+  deleteCommentAPI,
+  deleteImagesAPI,
+  fetchCommentsAPI,
+  getCommentAPI,
+  toggleLikeAPI,
+  updateCommentAPI,
+} from "../services/postService";
+import { AuthContext } from "../context/AuthContext";
+import ConfirmModal from "./ConfirmModal";
 
-const fetchCommentsAPI = async ({ queryKey, pageParam = 1 }) => {
-  const [_key, postId] = queryKey;
-  console.log(`Fetching comments for post ${postId}, page ${pageParam}`);
-  await new Promise((resolve) => setTimeout(resolve, 800)); // Giả lập độ trễ mạng
-
-  // Giả lập không có thêm bình luận sau trang 3
-  if (pageParam > 3) {
-    return { comments: [], nextPage: undefined };
-  }
-
-  const comments = Array.from({ length: 15 }).map((_, i) => ({
-    id: `comment_${postId}_${pageParam}_${i}`,
-    author: {
-      name: `Người dùng ${Math.floor(Math.random() * 100)}`,
-      avatar: `https://i.pravatar.cc/40?img=${Math.floor(Math.random() * 70)}`,
-    },
-    content: `Đây là bình luận số ${
-      i + 1
-    } của trang ${pageParam} cho bài viết.`,
-    createdAt: new Date().toISOString(),
-  }));
-
-  return { comments, nextPage: pageParam + 1 };
-};
+const commentSchema = yup.object().shape({
+  text: yup
+    .string()
+    .trim()
+    .optional()
+    .max(1000, "Bình luận không được quá 1000 ký tự"),
+});
 
 export default function PostModal({
   isOpen,
@@ -40,9 +45,32 @@ export default function PostModal({
   post,
   initialImageIndex = 0,
 }) {
+  const queryClient = useQueryClient();
+
+  const { user } = useContext(AuthContext);
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingText, setEditingText] = useState("");
+  const [commentToDelete, setCommentToDelete] = useState(null);
+
   const commentsContainerRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset: resetForm,
+    watch,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(commentSchema),
+    defaultValues: { text: "" },
+  });
+
+  const commentValue = watch("text");
 
   const {
     data: commentsData,
@@ -50,6 +78,7 @@ export default function PostModal({
     hasNextPage,
     isFetchingNextPage,
     isLoading: isLoadingComments,
+    refetch: refetchComments,
   } = useInfiniteQuery({
     queryKey: ["comments", post?.id],
     queryFn: fetchCommentsAPI,
@@ -58,15 +87,135 @@ export default function PostModal({
     enabled: !!isOpen && !!post?.id,
   });
 
+  const { data: likeData, refetch: refetchLikeStatus } = useQuery({
+    queryKey: ["userLiked", post?.id],
+    queryFn: () => checkUserLikedAPI(post.id),
+    enabled: !!isOpen && !!post?.id,
+  });
+
+  const toggleLikeMutation = useMutation({
+    mutationFn: () => toggleLikeAPI(post.id),
+    onSuccess: () => {
+      refetchLikeStatus();
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: () => {
+      toast.error("Có lỗi xảy ra, vui lòng thử lại");
+    },
+  });
+
+  const createCommentMutation = useMutation({
+    mutationFn: createCommentAPI,
+    onSuccess: () => {
+      resetForm();
+      setSelectedImages([]);
+      refetchComments();
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Có lỗi xảy ra khi bình luận"
+      );
+    },
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: updateCommentAPI,
+    onSuccess: () => {
+      setEditingCommentId(null);
+      setEditingText("");
+      refetchComments();
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Có lỗi xảy ra khi cập nhật"
+      );
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId) => {
+      const data = await getCommentAPI(commentId);
+      const images = data?.Images || [];
+
+      if (images.length > 0) {
+        const publicIds = images.map((img) => img.id);
+        await deleteImagesAPI(publicIds);
+      }
+
+      return await deleteCommentAPI(commentId);
+    },
+    onSuccess: () => {
+      refetchComments();
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi xóa");
+    },
+  });
+
   const allComments =
     commentsData?.pages.flatMap((page) => page.comments) ?? [];
+  const totalComments = commentsData?.pages[0]?.totalComments ?? 0;
+
+  const onSubmitComment = (data) => {
+    const imageFiles = selectedImages.map((img) => img.file);
+    createCommentMutation.mutate({
+      postId: post.id,
+      text: data.text,
+      images: imageFiles,
+    });
+  };
+
+  const handleEditComment = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditingText(comment.text);
+  };
+
+  const handleUpdateComment = () => {
+    if (!editingText.trim()) return;
+    updateCommentMutation.mutate({
+      commentId: editingCommentId,
+      text: editingText,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (commentToDelete) {
+      deleteCommentMutation.mutate(commentToDelete.id);
+      setCommentToDelete(null);
+    }
+  };
+
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    const newImages = files
+      .filter((file) => file.type.startsWith("image/"))
+      .map((file) => ({
+        id: Date.now() + Math.random(),
+        file: file,
+        previewUrl: URL.createObjectURL(file),
+      }));
+
+    setSelectedImages((prev) => [...prev, ...newImages]);
+    event.target.value = null;
+  };
+
+  const removeImage = (imageId) => {
+    setSelectedImages((prevImages) => {
+      const imageToRemove = prevImages.find((img) => img.id === imageId);
+      if (imageToRemove) {
+        URL.revokeObjectURL(imageToRemove.previewUrl);
+      }
+      return prevImages.filter((img) => img.id !== imageId);
+    });
+  };
 
   const handleScroll = () => {
     const container = commentsContainerRef.current;
     if (!container) return;
 
     const { scrollTop, scrollHeight, clientHeight } = container;
-    // Khi người dùng cuộn gần đến cuối (cách 50px), tải trang tiếp theo
     if (scrollHeight - scrollTop <= clientHeight + 50) {
       if (hasNextPage && !isFetchingNextPage) {
         fetchNextPage();
@@ -74,13 +223,22 @@ export default function PostModal({
     }
   };
 
-  // Reset trạng thái khi modal đóng/mở hoặc post thay đổi
   useEffect(() => {
     if (isOpen) {
       setCurrentImageIndex(initialImageIndex);
       setIsExpanded(false);
+      setSelectedImages([]);
+      setEditingCommentId(null);
+      resetForm();
     }
-  }, [isOpen, post, initialImageIndex]);
+  }, [isOpen, post, initialImageIndex, resetForm]);
+
+  useEffect(() => {
+    return () => {
+      selectedImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+    };
+  }, [selectedImages]);
+
   if (!isOpen || !post) {
     return null;
   }
@@ -88,7 +246,7 @@ export default function PostModal({
   const images = post.images || [];
   const authorName = post.author?.name || "Người dùng ẩn danh";
   const authorAvatar =
-    post.author?.avatar ||
+    user?.avatar ||
     `https://placehold.co/40x40/EFEFEF/AAAAAA?text=${authorName.charAt(0)}`;
   const formattedDate = post.createdAt
     ? formatDistanceToNow(new Date(post.createdAt), {
@@ -106,10 +264,17 @@ export default function PostModal({
       prevIndex === 0 ? images.length - 1 : prevIndex - 1
     );
   };
+
   const goToNextImage = () => {
     setCurrentImageIndex((prevIndex) =>
       prevIndex === images.length - 1 ? 0 : prevIndex + 1
     );
+  };
+
+  const getImageGridClass = (count) => {
+    if (count === 1) return "grid-cols-1";
+    if (count === 2) return "grid-cols-2";
+    return "grid-cols-2";
   };
 
   return (
@@ -199,7 +364,7 @@ export default function PostModal({
               </button>
             </div>
 
-            <div className="p-3 border-b overflow-y-auto max-h-48 text-sm">
+            <div className="p-3 border-b overflow-y-auto max-h-72 text-sm">
               <h3 className="font-bold text-base mb-2">{post.title}</h3>
               <p className="leading-relaxed whitespace-pre-wrap">
                 {isExpanded
@@ -217,11 +382,35 @@ export default function PostModal({
                 )}
               </p>
             </div>
-
+            <div className="flex items-center gap-4 mt-3 pt-2">
+              <button
+                onClick={() => toggleLikeMutation.mutate()}
+                disabled={toggleLikeMutation.isPending}
+                className="flex items-center gap-2 text-sm hover:bg-gray-100 rounded-full px-3 py-1 transition-colors"
+              >
+                {likeData?.isLiked ? (
+                  <AiFillLike className="fill-deepBlue" />
+                ) : (
+                  <AiOutlineLike />
+                )}
+                <span
+                  className={
+                    likeData?.isLiked
+                      ? "text-deepBlue font-medium"
+                      : "text-gray-600"
+                  }
+                >
+                  {likeData?.totalLikes || 0} lượt thích
+                </span>
+              </button>
+              <span className="text-sm text-gray-600">
+                {totalComments} bình luận
+              </span>
+            </div>
             <div
               ref={commentsContainerRef}
               onScroll={handleScroll}
-              className="flex-1 overflow-y-auto p-3 space-y-4"
+              className="flex-1 overflow-y-auto p-3 space-y-3"
             >
               {isLoadingComments ? (
                 <div className="text-center text-gray-500">
@@ -229,24 +418,96 @@ export default function PostModal({
                 </div>
               ) : allComments.length > 0 ? (
                 allComments.map((comment) => (
-                  <div key={comment.id} className="flex gap-2 text-sm">
+                  <div key={comment.id} className="flex gap-2 text-sm group">
                     <img
-                      src={comment.author.avatar}
-                      className="w-8 h-8 rounded-full flex-shrink-0"
-                      alt=""
+                      src={
+                        comment.author.avatar ||
+                        `https://placehold.co/32x32/EFEFEF/AAAAAA?text=${comment.author.name.charAt(
+                          0
+                        )}`
+                      }
+                      className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
                     />
-                    <div className="bg-gray-100 rounded-lg p-2 flex-grow">
-                      <p>
-                        <span className="font-semibold">
-                          {comment.author.name}
-                        </span>
-                        <span className="ml-2 text-xs text-gray-400">
+                    <div className="flex-grow">
+                      <div className="bg-gray-100 rounded-lg p-2 relative">
+                        {editingCommentId === comment.id ? (
+                          <div className="space-y-3">
+                            <textarea
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="w-full p-2  rounded-lg resize-none text-sm outline-none "
+                              rows="3"
+                              placeholder="Chỉnh sửa bình luận..."
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={handleUpdateComment}
+                                disabled={updateCommentMutation.isPending}
+                                className="px-4 py-1.5 min-w-[80px] bg-deepBlue text-white rounded-lg text-xs font-medium hover:bg-deepBlue/90 disabled:opacity-50"
+                              >
+                                Cập nhật
+                              </button>
+                              <button
+                                onClick={() => setEditingCommentId(null)}
+                                className="px-4 py-1.5 min-w-[80px] bg-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-300"
+                              >
+                                Hủy bỏ
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p>
+                              <span className="font-semibold">
+                                {comment.author.name}
+                              </span>
+                            </p>
+                            <p className="text-gray-800 mt-1">{comment.text}</p>
+
+                            {comment.Images && comment.Images.length > 0 && (
+                              <div
+                                className={`grid gap-1 mt-2 ${getImageGridClass(
+                                  comment.Images.length
+                                )}`}
+                              >
+                                {comment.Images.map((image) => (
+                                  <img
+                                    key={image.id}
+                                    src={image.url}
+                                    className="w-full object-cover rounded"
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-4 mt-1 ml-2 text-xs text-gray-500">
+                        <span>
                           {formatDistanceToNow(new Date(comment.createdAt), {
                             locale: vi,
                           })}
                         </span>
-                      </p>
-                      <p className="text-gray-800">{comment.content}</p>
+                        {user.id === comment.author?.id &&
+                          !editingCommentId && (
+                            <>
+                              <button
+                                onClick={() => handleEditComment(comment)}
+                                className="font-medium hover:underline hover:text-deepBlue"
+                              >
+                                Sửa
+                              </button>
+                              {/* BƯỚC 2: Cập nhật nút Xóa để set state `commentToDelete` */}
+                              <button
+                                onClick={() => setCommentToDelete(comment)}
+                                className="font-medium hover:underline hover:text-red-500"
+                              >
+                                Xóa
+                              </button>
+                            </>
+                          )}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -255,11 +516,13 @@ export default function PostModal({
                   Chưa có bình luận nào.
                 </div>
               )}
+
               {isFetchingNextPage && (
                 <div className="text-center text-sm text-gray-500">
                   Đang tải thêm...
                 </div>
               )}
+
               {!hasNextPage && !isLoadingComments && allComments.length > 0 && (
                 <div className="text-center text-xs text-gray-400 pt-4">
                   Đã hết bình luận.
@@ -267,26 +530,110 @@ export default function PostModal({
               )}
             </div>
 
-            <div className="border-t p-2 flex gap-2 items-center">
-              <img
-                src={authorAvatar}
-                className="w-8 h-8 rounded-full"
-                alt="Your avatar"
-              />
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  placeholder="Viết bình luận..."
-                  className="w-full bg-gray-100 rounded-full pl-3 pr-10 py-2 text-sm outline-none focus:ring-2 focus:ring-deepBlue"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-deepBlue hover:text-blue-700">
-                  <FaRegPaperPlane size={18} />
-                </button>
-              </div>
+            <div className="border-t bg-white p-3 sticky bottom-0">
+              <form onSubmit={handleSubmit(onSubmitComment)}>
+                <div className="flex items-start gap-3">
+                  <img
+                    src={authorAvatar}
+                    className="w-8 h-8 rounded-full flex-shrink-0 mt-1"
+                  />
+
+                  <div className="flex-1">
+                    <div className="bg-gray-100 rounded-2xl px-3 py-2">
+                      <textarea
+                        {...register("text")}
+                        placeholder="Viết bình luận..."
+                        className="w-full bg-transparent border-none focus:ring-0 resize-none outline-none text-sm placeholder-gray-500"
+                        rows="1"
+                        onInput={(e) => {
+                          e.target.style.height = "auto";
+                          e.target.style.height = e.target.scrollHeight + "px";
+                        }}
+                      />
+
+                      {selectedImages.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-200">
+                          <div className="grid grid-cols-4 gap-2">
+                            {selectedImages.map((image) => (
+                              <div key={image.id} className="relative group">
+                                <img
+                                  src={image.previewUrl}
+                                  alt="Preview"
+                                  className="w-full h-14 object-cover rounded-md"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(image.id)}
+                                  className="absolute -top-1.5 -right-1.5 bg-gray-700 text-white w-5 h-5 flex items-center justify-center rounded-full text-xs opacity-50 group-hover:opacity-100 hover:!opacity-100 hover:bg-red-500 transition-all duration-200"
+                                >
+                                  <IoClose />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-1 ml-2">
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          title="Đính kèm ảnh"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-gray-500 hover:text-deepBlue p-1 rounded-full"
+                        >
+                          <BsImages size={18} />
+                        </button>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={
+                          createCommentMutation.isPending ||
+                          (!commentValue.trim() && selectedImages.length === 0)
+                        }
+                        className="text-deepBlue disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded-full font-semibold flex items-center gap-2 hover:bg-gray-200"
+                      >
+                        <FaRegPaperPlane
+                          size={16}
+                          className="fill-deepBlue  transition-colors duration-200 cursor-pointer"
+                        />
+                      </button>
+                    </div>
+                    {errors.text && (
+                      <p className="text-red-500 text-xs mt-1 ml-2">
+                        {errors.text.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </motion.div>
       </motion.div>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        multiple
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      <ConfirmModal
+        isOpen={!!commentToDelete}
+        onClose={() => setCommentToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title={"Xác nhận xoá bình luận"}
+        message={
+          "Bạn có chắc chắn muốn xoá bình luận này không? Hành động này không thể hoàn tác."
+        }
+        variant={"warning"}
+        isConfirming={deleteCommentMutation.isPending}
+        confirmText={"Vẫn xóa"}
+      />
     </AnimatePresence>
   );
 }

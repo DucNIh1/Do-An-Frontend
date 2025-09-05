@@ -1,23 +1,38 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-
-// Icons
-import { PiDotsThreeThin } from "react-icons/pi";
-import { FaRegThumbsUp } from "react-icons/fa6";
-import { FaRegCommentAlt } from "react-icons/fa";
-import { PiShareFatLight } from "react-icons/pi";
-
-// Components
+import { FaRegCommentAlt, FaStar } from "react-icons/fa";
 import PostModal from "./PostModal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { checkUserLikedAPI, toggleLikeAPI } from "../services/postService";
+import { toast } from "react-toastify";
+import { AiFillLike, AiOutlineLike } from "react-icons/ai";
 
 const CONTENT_MAX_LENGTH = 250;
 
 const Post = ({ post }) => {
+  const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState({});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  const { data: likeData, refetch: refetchLikeStatus } = useQuery({
+    queryKey: ["userLiked", post?.id],
+    queryFn: () => checkUserLikedAPI(post.id),
+    enabled: !!post?.id,
+  });
+
+  const toggleLikeMutation = useMutation({
+    mutationFn: () => toggleLikeAPI(post.id),
+    onSuccess: () => {
+      refetchLikeStatus();
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: () => {
+      toast.error("Có lỗi xảy ra, vui lòng thử lại");
+    },
+  });
 
   if (!post) {
     return null;
@@ -84,9 +99,14 @@ const Post = ({ post }) => {
             </div>
           </div>
         </div>
-        <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-          <PiDotsThreeThin className="w-5 h-5 text-gray-500" />
-        </button>
+        {["ADVISOR", "ADMIN"].includes(post.author?.role) && (
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-50 hover:bg-yellow-100 transition-colors">
+            <FaStar className="w-4 h-4 fill-yellow-500" />
+            <span className="text-sm font-medium text-yellow-700">
+              Bài viết nổi bật
+            </span>
+          </button>
+        )}
       </div>
 
       <div className="px-4 pb-3">
@@ -164,11 +184,23 @@ const Post = ({ post }) => {
 
       <div className="h-px bg-gray-200 mx-4" />
 
-      <div className="grid grid-cols-3 p-2">
-        <button className="flex items-center justify-center gap-2 py-2 px-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors font-medium">
-          <FaRegThumbsUp className="w-4 h-4" />
-          <span>Thích</span>
+      <div className="flex p-2 justify-between px-5">
+        <button
+          onClick={() => toggleLikeMutation.mutate()}
+          disabled={toggleLikeMutation.isPending}
+          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-colors font-medium hover:bg-blue-50`}
+        >
+          {likeData?.isLiked ? (
+            <AiFillLike className="fill-deepBlue" />
+          ) : (
+            <AiOutlineLike />
+          )}
+          <span className="text-sm font-medium">
+            {likeData?.totalLikes || 0}{" "}
+            {likeData?.totalLikes > 1 ? "lượt thích" : "Thích"}
+          </span>
         </button>
+
         <button
           className="flex items-center justify-center gap-2 py-2 px-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors font-medium"
           onClick={() => setIsModalOpen(true)}
@@ -176,26 +208,21 @@ const Post = ({ post }) => {
           <FaRegCommentAlt className="w-4 h-4" />
           <span>Bình luận</span>
         </button>
-        <button className="flex items-center justify-center gap-2 py-2 px-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors font-medium">
-          <PiShareFatLight className="w-4 h-4" />
-          <span>Chia sẻ</span>
-        </button>
       </div>
 
       <div className="flex items-center gap-3 p-4 border-t border-gray-100 bg-gray-50/50">
         <img
           src={authorAvatar}
-          alt=""
           className="w-8 h-8 rounded-full object-cover"
           onError={(e) => {
             e.target.src = `https://placehold.co/32x32/667eea/ffffff?text=U`;
           }}
         />
-        <div className="flex-1">
+        <div className="flex-1" onClick={() => setIsModalOpen(true)}>
           <input
             type="text"
             placeholder="Viết bình luận..."
-            className="w-full bg-white rounded-full px-4 py-2 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full bg-white rounded-full px-4 py-2 text-sm border border-gray-200 outline-none focus:border-transparent transition-all"
           />
         </div>
       </div>
