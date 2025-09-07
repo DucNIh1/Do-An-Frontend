@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { FaRegCommentAlt, FaStar } from "react-icons/fa";
@@ -7,11 +7,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { checkUserLikedAPI, toggleLikeAPI } from "../services/postService";
 import { toast } from "react-toastify";
 import { AiFillLike, AiOutlineLike } from "react-icons/ai";
+import AuthActionWrapper from "./AuthActionWrapper";
+import { AuthContext } from "../context/AuthContext";
 
 const CONTENT_MAX_LENGTH = 250;
 
 const Post = ({ post }) => {
   const queryClient = useQueryClient();
+  const { user } = useContext(AuthContext);
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState({});
@@ -20,7 +24,7 @@ const Post = ({ post }) => {
   const { data: likeData, refetch: refetchLikeStatus } = useQuery({
     queryKey: ["userLiked", post?.id],
     queryFn: () => checkUserLikedAPI(post.id),
-    enabled: !!post?.id,
+    enabled: !!post?.id && !!user,
   });
 
   const toggleLikeMutation = useMutation({
@@ -185,21 +189,22 @@ const Post = ({ post }) => {
       <div className="h-px bg-gray-200 mx-4" />
 
       <div className="flex p-2 justify-between px-5">
-        <button
-          onClick={() => toggleLikeMutation.mutate()}
-          disabled={toggleLikeMutation.isPending}
-          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-colors font-medium hover:bg-blue-50`}
-        >
-          {likeData?.isLiked ? (
-            <AiFillLike className="fill-deepBlue" />
-          ) : (
-            <AiOutlineLike />
-          )}
-          <span className="text-sm font-medium">
-            {likeData?.totalLikes || 0}{" "}
-            {likeData?.totalLikes > 1 ? "lượt thích" : "Thích"}
-          </span>
-        </button>
+        <AuthActionWrapper onClick={() => toggleLikeMutation.mutate()}>
+          <button
+            disabled={toggleLikeMutation.isPending}
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-colors font-medium hover:bg-blue-50`}
+          >
+            {likeData?.isLiked ? (
+              <AiFillLike className="fill-deepBlue" />
+            ) : (
+              <AiOutlineLike />
+            )}
+            <span className="text-sm font-medium">
+              {likeData?.totalLikes || 0}{" "}
+              {likeData?.totalLikes > 1 ? "lượt thích" : "Thích"}
+            </span>
+          </button>
+        </AuthActionWrapper>
 
         <button
           className="flex items-center justify-center gap-2 py-2 px-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors font-medium"

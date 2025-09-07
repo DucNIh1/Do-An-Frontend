@@ -2,15 +2,21 @@ import { NavLink, useNavigate } from "react-router";
 import { useState, useRef, useEffect, useContext } from "react";
 import { MdMenu, MdKeyboardArrowDown } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
-import { FiUser, FiLogOut, FiSettings } from "react-icons/fi";
+import { FiUser, FiLogOut, FiSettings, FiMessageSquare } from "react-icons/fi";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import socket from "../socket/socket.js";
+import ChatPopup from "./chat/ChatPopup";
+import { IoChatbubblesOutline } from "react-icons/io5";
 
 const Header = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [conversations, setConversations] = useState([]);
 
   const userMenuRef = useRef(null);
 
@@ -30,6 +36,29 @@ const Header = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/conversations`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setConversations(data);
+    };
+    fetchConversations();
+
+    socket.on("newMessage", (msg) => {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === msg.conversationId ? { ...c, lastMessage: msg } : c
+        )
+      );
+    });
+
+    return () => {
+      socket.off("newMessage");
     };
   }, []);
 
@@ -110,8 +139,22 @@ const Header = () => {
           </button>
 
           <div className="flex gap-2">
-            <img src="/logo/vn.webp" alt="VN" className="w-8 sm:w-10" />
-            <img src="/logo/en.webp" alt="EN" className="w-8 sm:w-10" />
+            {/* Icon tin nhắn */}
+            <div className="relative">
+              <button
+                className="p-2 rounded-lg hover:bg-gray-100"
+                onClick={() => setIsChatOpen(!isChatOpen)}
+              >
+                <IoChatbubblesOutline className="w-6 h-6 text-gray-700" />
+              </button>
+
+              {isChatOpen && (
+                <ChatPopup
+                  conversations={conversations}
+                  onClose={() => setIsChatOpen(false)}
+                />
+              )}
+            </div>
           </div>
 
           <div className="relative">

@@ -12,6 +12,7 @@ import { ToastContainer } from "react-toastify";
 import Register from "./Pages/Register";
 import QnAForum from "./Pages/QnAForum";
 import AuthContexProvider from "./context/AuthContext";
+import { SocketProvider } from "./context/SocketContext";
 
 const queryClient = new QueryClient();
 const clientId = import.meta.env.VITE_GG_CLIENT_ID;
@@ -50,11 +51,13 @@ createRoot(document.getElementById("root")).render(
       theme="light"
     />
     <AuthContexProvider>
-      <GoogleOAuthProvider clientId={clientId}>
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>
-      </GoogleOAuthProvider>
+      <SocketProvider>
+        <GoogleOAuthProvider clientId={clientId}>
+          <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+          </QueryClientProvider>
+        </GoogleOAuthProvider>
+      </SocketProvider>
     </AuthContexProvider>
   </StrictMode>
 );

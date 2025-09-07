@@ -70,9 +70,9 @@ const QnAForum = () => {
     <div className="flex flex-col lg:flex-row w-full min-h-screen py-5 md:py-10 px-4 sm:px-8 md:px-12 lg:px-20 bg-gray-50 gap-8">
       <section className="w-full lg:w-3/5">
         {user && (
-          <div className="sticky top-[70px] z-10 bg-gray-50 pt-2 pb-5">
+          <div className="sticky top-[70px] z-10 bg-gray-50  pt-5 shadow-md">
             <StoryList />
-            <div className="flex flex-col md:flex-row items-center justify-between bg-white p-4 md:p-5 rounded-xl shadow-sm gap-4">
+            <div className="flex flex-col flex-wrap md:flex-row items-center justify-between bg-white p-4 md:p-5 rounded-xl shadow-sm gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <div className="relative w-full sm:w-64">
                   <input

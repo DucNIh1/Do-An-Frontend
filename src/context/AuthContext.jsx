@@ -5,9 +5,19 @@ import axiosConfig from "../axios/config.js";
 export const AuthContext = createContext();
 
 const AuthContexProvider = ({ children }) => {
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user")) || null
-  );
+  const getStoredUser = () => {
+    const stored = JSON.parse(localStorage.getItem("user"));
+    if (!stored) return null;
+
+    if (stored.expiry && stored.expiry > Date.now()) {
+      return stored.value;
+    } else {
+      localStorage.removeItem("user");
+      return null;
+    }
+  };
+
+  const [user, setUser] = useState(getStoredUser());
   const [openProfile, setOpenProfile] = useState(false);
 
   const login = async ({ email, password }) => {
@@ -40,7 +50,15 @@ const AuthContexProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    localStorage.setItem("user", JSON.stringify(user));
+    if (user) {
+      const item = {
+        value: user,
+        expiry: Date.now() + 60 * 60 * 1000,
+      };
+      localStorage.setItem("user", JSON.stringify(item));
+    } else {
+      localStorage.removeItem("user");
+    }
   }, [user]);
 
   return (

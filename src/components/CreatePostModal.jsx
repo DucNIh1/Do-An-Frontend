@@ -91,7 +91,6 @@ const CreatePostModal = () => {
       closeModal();
     },
     onError: (error) => {
-      // Hiển thị lỗi cụ thể hơn
       toast.error(error.message || "Có lỗi xảy ra, vui lòng thử lại!");
     },
   });

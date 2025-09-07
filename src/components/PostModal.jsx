@@ -30,6 +30,7 @@ import {
 } from "../services/postService";
 import { AuthContext } from "../context/AuthContext";
 import ConfirmModal from "./ConfirmModal";
+import AuthActionWrapper from "./AuthActionWrapper";
 
 const commentSchema = yup.object().shape({
   text: yup
@@ -90,7 +91,7 @@ export default function PostModal({
   const { data: likeData, refetch: refetchLikeStatus } = useQuery({
     queryKey: ["userLiked", post?.id],
     queryFn: () => checkUserLikedAPI(post.id),
-    enabled: !!isOpen && !!post?.id,
+    enabled: !!isOpen && !!post?.id && !!user,
   });
 
   const toggleLikeMutation = useMutation({
@@ -383,26 +384,28 @@ export default function PostModal({
               </p>
             </div>
             <div className="flex items-center gap-4 mt-3 pt-2">
-              <button
-                onClick={() => toggleLikeMutation.mutate()}
-                disabled={toggleLikeMutation.isPending}
-                className="flex items-center gap-2 text-sm hover:bg-gray-100 rounded-full px-3 py-1 transition-colors"
-              >
-                {likeData?.isLiked ? (
-                  <AiFillLike className="fill-deepBlue" />
-                ) : (
-                  <AiOutlineLike />
-                )}
-                <span
-                  className={
-                    likeData?.isLiked
-                      ? "text-deepBlue font-medium"
-                      : "text-gray-600"
-                  }
+              <AuthActionWrapper onClick={() => toggleLikeMutation.mutate()}>
+                <button
+                  disabled={toggleLikeMutation.isPending}
+                  className="flex items-center gap-2 text-sm hover:bg-gray-100 rounded-full px-3 py-1 transition-colors"
                 >
-                  {likeData?.totalLikes || 0} lượt thích
-                </span>
-              </button>
+                  {likeData?.isLiked ? (
+                    <AiFillLike className="fill-deepBlue" />
+                  ) : (
+                    <AiOutlineLike />
+                  )}
+                  <span
+                    className={
+                      likeData?.isLiked
+                        ? "text-deepBlue font-medium"
+                        : "text-gray-600"
+                    }
+                  >
+                    {likeData?.totalLikes || 0} lượt thích
+                  </span>
+                </button>
+              </AuthActionWrapper>
+
               <span className="text-sm text-gray-600">
                 {totalComments} bình luận
               </span>
@@ -489,7 +492,7 @@ export default function PostModal({
                             locale: vi,
                           })}
                         </span>
-                        {user.id === comment.author?.id &&
+                        {user?.id === comment?.author?.id &&
                           !editingCommentId && (
                             <>
                               <button
@@ -498,7 +501,6 @@ export default function PostModal({
                               >
                                 Sửa
                               </button>
-                              {/* BƯỚC 2: Cập nhật nút Xóa để set state `commentToDelete` */}
                               <button
                                 onClick={() => setCommentToDelete(comment)}
                                 className="font-medium hover:underline hover:text-red-500"
@@ -531,7 +533,7 @@ export default function PostModal({
             </div>
 
             <div className="border-t bg-white p-3 sticky bottom-0">
-              <form onSubmit={handleSubmit(onSubmitComment)}>
+              <form>
                 <div className="flex items-start gap-3">
                   <img
                     src={authorAvatar}
@@ -586,19 +588,23 @@ export default function PostModal({
                           <BsImages size={18} />
                         </button>
                       </div>
-                      <button
-                        type="submit"
-                        disabled={
-                          createCommentMutation.isPending ||
-                          (!commentValue.trim() && selectedImages.length === 0)
-                        }
-                        className="text-deepBlue disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded-full font-semibold flex items-center gap-2 hover:bg-gray-200"
+                      <AuthActionWrapper
+                        onClick={handleSubmit(onSubmitComment)}
                       >
-                        <FaRegPaperPlane
-                          size={16}
-                          className="fill-deepBlue  transition-colors duration-200 cursor-pointer"
-                        />
-                      </button>
+                        <button
+                          disabled={
+                            createCommentMutation.isPending ||
+                            (!commentValue.trim() &&
+                              selectedImages.length === 0)
+                          }
+                          className="text-deepBlue disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded-full font-semibold flex items-center gap-2 hover:bg-gray-200"
+                        >
+                          <FaRegPaperPlane
+                            size={16}
+                            className="fill-deepBlue  transition-colors duration-200 cursor-pointer"
+                          />
+                        </button>
+                      </AuthActionWrapper>
                     </div>
                     {errors.text && (
                       <p className="text-red-500 text-xs mt-1 ml-2">

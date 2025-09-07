@@ -40,11 +40,9 @@ const Login = () => {
       if (data.id) {
         setUserId(data.id);
         setOpenVerify(true);
-        toast.success(data.message || "Vui lòng xác minh email");
         return;
       }
       navigate("/");
-      toast.success(data.message || "Đăng nhập thành công");
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Đăng nhập thất bại");
@@ -54,7 +52,6 @@ const Login = () => {
   const loginWithGoogleMutation = useMutation({
     mutationFn: loginWithGoogle,
     onSuccess: () => {
-      toast.success("Đăng nhập Google thành công");
       navigate("/");
     },
     onError: () => {

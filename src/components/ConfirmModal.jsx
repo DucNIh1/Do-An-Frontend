@@ -8,13 +8,13 @@ const variants = {
   warning: {
     Icon: IoWarningOutline,
     iconColor: "text-red-500",
-    confirmButtonColor: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
+    confirmButtonColor: "bg-red-600 hover:bg-opacity-90",
     title: "Cảnh báo",
   },
   notice: {
     Icon: IoInformationCircleOutline,
     iconColor: "text-blue-500",
-    confirmButtonColor: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
+    confirmButtonColor: "bg-deepBlue hover:bg-opacity-90",
     title: "Thông báo",
   },
 };
