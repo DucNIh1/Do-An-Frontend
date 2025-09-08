@@ -2,7 +2,6 @@ import axiosConfig from "../axios/config";
 
 export const uploadImagesAPI = async (imageFiles, extraData = {}) => {
   const formData = new FormData();
-  console.log(extraData);
   imageFiles.forEach((file) => {
     formData.append("images", file);
   });
@@ -14,7 +13,6 @@ export const uploadImagesAPI = async (imageFiles, extraData = {}) => {
   Object.entries(extraData).forEach(([key, value]) => {
     if (value) formData.append(key, value);
   });
-  console.log(formData);
   const res = await axiosConfig.post(`api/images/upload`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",

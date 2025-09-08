@@ -13,6 +13,7 @@ import Register from "./Pages/Register";
 import QnAForum from "./Pages/QnAForum";
 import AuthContexProvider from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
+import { ChatProvider } from "./context/ChatContext";
 
 const queryClient = new QueryClient();
 const clientId = import.meta.env.VITE_GG_CLIENT_ID;
@@ -52,11 +53,13 @@ createRoot(document.getElementById("root")).render(
     />
     <AuthContexProvider>
       <SocketProvider>
-        <GoogleOAuthProvider clientId={clientId}>
-          <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-          </QueryClientProvider>
-        </GoogleOAuthProvider>
+        <ChatProvider>
+          <GoogleOAuthProvider clientId={clientId}>
+            <QueryClientProvider client={queryClient}>
+              <RouterProvider router={router} />
+            </QueryClientProvider>
+          </GoogleOAuthProvider>
+        </ChatProvider>
       </SocketProvider>
     </AuthContexProvider>
   </StrictMode>
