@@ -2,7 +2,6 @@ import { FaChevronRight } from "react-icons/fa";
 import { useRef, useMemo, useState, useEffect, useContext } from "react";
 import { useSocket } from "../context/SocketContext";
 import { AuthContext } from "../context/AuthContext";
-import ChatBox from "./chat/ChatBox";
 import { useChat } from "../context/ChatContext";
 
 const StoryList = () => {

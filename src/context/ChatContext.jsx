@@ -6,8 +6,8 @@ export const ChatProvider = ({ children }) => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [showChatPopup, setShowChatPopup] = useState(false);
 
-  const openConversation = ({ conversationId, receiver }) => {
-    setSelectedConversation({ conversationId, receiver });
+  const openConversation = ({ conversation, receiver }) => {
+    setSelectedConversation({ conversation, receiver });
     setShowChatPopup(false);
   };
 

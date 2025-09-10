@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import socket from "../socket/socket.js";
 import ChatPopup from "./chat/ChatPopup";
 import { IoChatbubblesOutline } from "react-icons/io5";
+import UserAvatar from "./CommonAvatar.jsx";
 
 const Header = () => {
   const { user, logout } = useContext(AuthContext);
@@ -74,29 +75,6 @@ const Header = () => {
       toast.error("Có lỗi xảy ra, vui lòng thử lại!!");
     }
     setIsUserMenuOpen(false);
-  };
-
-  const UserAvatar = ({ src, alt, size = "w-8 h-8" }) => {
-    const [imgError, setImgError] = useState(false);
-
-    if (imgError || !src) {
-      return (
-        <div
-          className={`${size} bg-deepBlue rounded-full flex items-center justify-center text-white text-sm font-medium`}
-        >
-          {user.name.charAt(0).toUpperCase()}
-        </div>
-      );
-    }
-
-    return (
-      <img
-        src={src}
-        alt={alt}
-        className={`${size} rounded-full object-cover`}
-        onError={() => setImgError(true)}
-      />
-    );
   };
 
   return (
@@ -173,7 +151,11 @@ const Header = () => {
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200"
                 >
-                  <UserAvatar src={user.avatar} alt={user.name} />
+                  <UserAvatar
+                    src={user.avatar}
+                    alt={user.name}
+                    name={user.name}
+                  />
                   <span className="text-sm font-medium text-gray-700 max-w-20 truncate">
                     {user.name}
                   </span>
@@ -192,6 +174,7 @@ const Header = () => {
                           src={user.avatar}
                           alt={user.name}
                           size="w-10 h-10"
+                          name={user.name}
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
@@ -285,7 +268,11 @@ const Header = () => {
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                    <UserAvatar src={user.avatar} alt={user.name} />
+                    <UserAvatar
+                      src={user.avatar}
+                      alt={user.name}
+                      name={user.name}
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {user.name}

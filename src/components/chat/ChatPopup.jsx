@@ -6,6 +6,8 @@ import { vi } from "date-fns/locale";
 import axiosConfig from "../../axios/config";
 import { AuthContext } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import CreateGroupModal from "./CreateGroupModal";
+import UserAvatar from "../CommonAvatar";
 
 async function getConversationsAPI(search = "") {
   const res = await axiosConfig.get("/api/conversations", {
@@ -16,6 +18,7 @@ async function getConversationsAPI(search = "") {
 
 export default function ChatPopup({ onClose }) {
   const { user: currentUser } = useContext(AuthContext);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const { openConversation } = useChat();
 
   const [search, setSearch] = useState("");
@@ -27,7 +30,7 @@ export default function ChatPopup({ onClose }) {
 
   const handleSetSelectedConversation = (c, partner) => {
     openConversation({
-      conversationId: c.id,
+      conversation: c,
       receiver: partner,
     });
     onClose();
@@ -35,18 +38,29 @@ export default function ChatPopup({ onClose }) {
 
   return (
     <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl flex z-[1000] flex-col border-l border-gray-200">
-      {/* Header */}
       <div className="p-3 flex justify-between items-center text-white">
         <h2 className="text-lg font-semibold">Đoạn chat</h2>
-        <button
-          onClick={onClose}
-          className="text-gray-800 hover:text-textRed bg-slate-50 w-8 h-8 rounded-full hover:bg-gray-100"
-        >
-          ✕
-        </button>
+        <div className="flex gap-2">
+          {currentUser.role !== "STUDENT" && (
+            <>
+              <button
+                onClick={() => setShowCreateGroup(true)}
+                className="text-sm px-3 py-1 bg-deepBlue text-white rounded hover:bg-opacity-90"
+              >
+                + Tạo nhóm
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={onClose}
+            className="text-gray-800 hover:text-textRed bg-slate-50 w-8 h-8 rounded-full hover:bg-gray-100"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
-      {/* Search */}
       <div className="p-2">
         <div className="flex items-center bg-gray-100 rounded-full px-3 py-2">
           <IoSearch className="text-gray-400" />
@@ -85,10 +99,11 @@ export default function ChatPopup({ onClose }) {
                 onClick={() => handleSetSelectedConversation(c, partner)}
                 className="flex items-center gap-3 p-3 hover:bg-blue-50 cursor-pointer transition"
               >
-                <img
-                  src={c.isGroup ? "/group-avatar.png" : partner?.avatar}
-                  alt="avatar"
-                  className="w-10 h-10 rounded-full object-cover"
+                <UserAvatar
+                  size="w-10 h-10"
+                  alt=""
+                  name={c.isGroup ? c.name : partner?.name || "User"}
+                  src={partner?.avatar || c.avatar}
                 />
 
                 <div className="flex-1 min-w-0">
@@ -111,6 +126,15 @@ export default function ChatPopup({ onClose }) {
           })
         )}
       </div>
+
+      {showCreateGroup && (
+        <CreateGroupModal
+          onClose={() => setShowCreateGroup(false)}
+          onSuccess={(newGroup) => {
+            console.log("Nhóm vừa tạo:", newGroup);
+          }}
+        />
+      )}
     </div>
   );
 }
