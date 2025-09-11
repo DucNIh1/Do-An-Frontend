@@ -118,8 +118,6 @@ export default function ChatBox() {
     if (!socket) return;
 
     const handleNewMessage = ({ conversationId: convId, message }) => {
-      console.log("Received new message via socket:", convId, message);
-
       const activeConvId = conversation?.id || receiver?.conversationId;
 
       if (convId === activeConvId) {

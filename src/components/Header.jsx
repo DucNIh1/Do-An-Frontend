@@ -1,26 +1,29 @@
 import { NavLink, useNavigate } from "react-router";
 import { useState, useRef, useEffect, useContext } from "react";
 import { MdMenu, MdKeyboardArrowDown } from "react-icons/md";
-import { IoMdClose } from "react-icons/io";
+import { IoMdClose, IoMdNotificationsOutline } from "react-icons/io";
 import { FiUser, FiLogOut, FiSettings, FiMessageSquare } from "react-icons/fi";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import socket from "../socket/socket.js";
 import ChatPopup from "./chat/ChatPopup";
 import { IoChatbubblesOutline } from "react-icons/io5";
 import UserAvatar from "./CommonAvatar.jsx";
+import NotificationsPopup from "./NotificationsPopup.jsx";
+import { useSocket } from "../context/SocketContext.jsx";
 
 const Header = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-
+  const { socket } = useSocket();
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [conversations, setConversations] = useState([]);
-
+  const [isHasNewMessage, setIsHasNewMessage] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isHasNewNoti, setIsHasNewNoti] = useState(false);
   const userMenuRef = useRef(null);
-
+  const chatRef = useRef(null);
+  const notificationsRef = useRef(null);
   const navLinks = [
     { name: "Trang chủ", path: "/" },
     { name: "Tư vấn hỏi đáp", path: "/tu-van-hoi-dap" },
@@ -32,6 +35,15 @@ const Header = () => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setIsUserMenuOpen(false);
       }
+      if (chatRef.current && !chatRef.current.contains(event.target)) {
+        setIsChatOpen(false);
+      }
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target)
+      ) {
+        setIsNotificationsOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -41,27 +53,20 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
-    const fetchConversations = async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/conversations`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      setConversations(data);
+    const handleNewNotification = () => {
+      setIsHasNewNoti(true);
     };
-    fetchConversations();
-
-    socket.on("newMessage", (msg) => {
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === msg.conversationId ? { ...c, lastMessage: msg } : c
-        )
-      );
-    });
+    const handleNewMessage = () => {
+      setIsHasNewMessage(true);
+    };
+    socket.on("newNotification", handleNewNotification);
+    socket.on("newMessage", handleNewMessage);
 
     return () => {
-      socket.off("newMessage");
+      socket.off("newNotification", handleNewNotification);
+      socket.off("newMessage", handleNewMessage);
     };
-  }, []);
+  }, [socket]);
 
   const handleLogin = () => {
     navigate("/login");
@@ -116,24 +121,50 @@ const Header = () => {
             Tư vấn xét tuyển
           </button>
 
-          <div className="flex gap-2">
-            {/* Icon tin nhắn */}
-            <div className="relative">
-              <button
-                className="p-2 rounded-lg hover:bg-gray-100"
-                onClick={() => setIsChatOpen(!isChatOpen)}
-              >
-                <IoChatbubblesOutline className="w-6 h-6 text-gray-700" />
-              </button>
+          {user && (
+            <div className="flex items-center gap-1">
+              {/* Icon Tin nhắn */}
+              <div className="relative" ref={chatRef}>
+                <button
+                  className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
+                  onClick={() => {
+                    setIsChatOpen(!isChatOpen);
+                    setIsNotificationsOpen(false);
+                    setIsHasNewMessage(false);
+                  }}
+                >
+                  <IoChatbubblesOutline className="w-6 h-6 text-gray-700" />
+                  {isHasNewMessage && (
+                    <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </button>
+                {isChatOpen && (
+                  <ChatPopup onClose={() => setIsChatOpen(false)} />
+                )}
+              </div>
 
-              {isChatOpen && (
-                <ChatPopup
-                  conversations={conversations}
-                  onClose={() => setIsChatOpen(false)}
-                />
-              )}
+              <div className="relative" ref={notificationsRef}>
+                <button
+                  className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
+                  onClick={() => {
+                    setIsNotificationsOpen(!isNotificationsOpen);
+                    setIsChatOpen(false);
+                    setIsHasNewNoti(false);
+                  }}
+                >
+                  <IoMdNotificationsOutline className="w-6 h-6 text-gray-700" />
+                  {isHasNewNoti && (
+                    <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </button>
+                {isNotificationsOpen && (
+                  <NotificationsPopup
+                    onClose={() => setIsNotificationsOpen(false)}
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="relative">
             {!user ? (
@@ -255,7 +286,6 @@ const Header = () => {
               <img src="/logo/en.webp" alt="EN" className="w-8" />
             </li>
 
-            {/* Mobile Auth Section */}
             <li className="pt-3 border-t">
               {!user ? (
                 <button
