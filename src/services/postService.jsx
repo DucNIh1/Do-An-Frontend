@@ -45,7 +45,7 @@ export const getPostsAPI = async (filters = {}) => {
 
 export const getPostAPI = async (id) => {
   const res = await axiosConfig.get(`api/posts/${id}`);
-  return res.data;
+  return res.data.post;
 };
 
 export const fetchCommentsAPI = async ({ queryKey, pageParam = 1 }) => {
@@ -109,4 +109,9 @@ export const deleteCommentAPI = async (commentId) => {
 export const getCommentAPI = async (commentId) => {
   const response = await axiosConfig.get(`/api/posts/comments/${commentId}`);
   return response.data.data;
+};
+
+export const getTopPostsAPI = async (limit = 5) => {
+  const res = await axiosConfig.get(`/api/posts/top?limit=${limit}`);
+  return res.data.data;
 };

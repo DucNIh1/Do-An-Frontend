@@ -27,7 +27,7 @@ const Header = () => {
   const navLinks = [
     { name: "Trang chủ", path: "/" },
     { name: "Tư vấn hỏi đáp", path: "/tu-van-hoi-dap" },
-    { name: "Bài đăng", path: "/posts" },
+    { name: "Bài đăng", path: "/tin-tuc" },
   ];
 
   useEffect(() => {
@@ -76,6 +76,7 @@ const Header = () => {
     try {
       await logout();
       localStorage.removeItem("user");
+      navigate("/login");
     } catch {
       toast.error("Có lỗi xảy ra, vui lòng thử lại!!");
     }
@@ -83,7 +84,7 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 p-4 z-[999] shadow-lg h-20 bg-white">
+    <header className="fixed top-0 left-0 right-0 p-4 z-10 shadow-lg h-20 bg-white">
       <div className="flex justify-between items-center h-full">
         <img
           src="/logo/logo.svg"
@@ -117,13 +118,17 @@ const Header = () => {
             ))}
           </ul>
 
-          <button className="bg-deepBlue px-4 py-2 rounded-3xl text-white text-sm font-medium hover:opacity-90 transition-all duration-150">
-            Tư vấn xét tuyển
-          </button>
+          {user && user.role === "ADVISOR" && (
+            <NavLink
+              to={"/danh-sach-tu-van"}
+              className="bg-deepBlue px-4 py-2 rounded-3xl text-white text-sm font-medium hover:opacity-90 transition-all duration-150"
+            >
+              Danh sách chờ tư vấn
+            </NavLink>
+          )}
 
           {user && (
             <div className="flex items-center gap-1">
-              {/* Icon Tin nhắn */}
               <div className="relative" ref={chatRef}>
                 <button
                   className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
@@ -255,7 +260,6 @@ const Header = () => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden bg-white shadow-lg border-t mt-2 rounded-lg">
           <ul className="flex flex-col gap-3 p-4 text-sm">
@@ -277,13 +281,12 @@ const Header = () => {
               </li>
             ))}
             <li>
-              <button className="w-full bg-deepBlue px-4 py-2 rounded-3xl text-white text-sm font-medium hover:opacity-90 transition-all">
-                Tư vấn xét tuyển
-              </button>
-            </li>
-            <li className="flex gap-3 items-center">
-              <img src="/logo/vn.webp" alt="VN" className="w-8" />
-              <img src="/logo/en.webp" alt="EN" className="w-8" />
+              <NavLink
+                to={"/danh-sach-tu-van"}
+                className="w-full bg-deepBlue px-4 py-2 rounded-3xl text-white text-sm font-medium hover:opacity-90 transition-all"
+              >
+                Danh sách tư vấn
+              </NavLink>
             </li>
 
             <li className="pt-3 border-t">

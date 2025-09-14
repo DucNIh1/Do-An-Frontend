@@ -6,20 +6,19 @@ import { IoSearchSharp } from "react-icons/io5";
 
 import { AuthContext } from "../context/AuthContext";
 import useDebounce from "../hooks/useDebounce";
-import CreatePostModal from "../components/CreatePostModal";
 import Post from "../components/Post";
 import PostSkeleton from "../components/PostSkeleton";
-import { getPostsAPI } from "../services/postService";
+import { getPostsAPI, getTopPostsAPI } from "../services/postService";
 import StoryList from "../components/StoryList";
-
+import CreatePostModal from "../components/Post/CreatePostModal";
+import PostModal from "../components/PostModal";
 const QnAForum = () => {
   const { user } = useContext(AuthContext);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMajor, setSelectedMajor] = useState(null);
-
+  const [selectedPost, setSelectedPost] = useState(null);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-
   const { ref, inView } = useInView();
 
   const {
@@ -38,6 +37,8 @@ const QnAForum = () => {
       getPostsAPI({
         page: pageParam,
         limit: 10,
+        isFromSchool: false,
+        status: "verified",
         title: debouncedSearchTerm,
         majorId: selectedMajor?.value,
       }),
@@ -55,6 +56,11 @@ const QnAForum = () => {
     },
   });
 
+  const { data: topPosts, isLoading: loadingTopPosts } = useQuery({
+    queryKey: ["topPosts"],
+    queryFn: () => getTopPostsAPI(5),
+  });
+
   const majorOptions =
     majorsData?.map((m) => ({ value: m.id, label: m.name })) || [];
 
@@ -70,7 +76,7 @@ const QnAForum = () => {
     <div className="flex flex-col lg:flex-row w-full min-h-screen py-5 md:py-10 px-4 sm:px-8 md:px-12 lg:px-20 bg-gray-50 gap-8">
       <section className="w-full lg:w-3/5">
         {user && (
-          <div className="sticky top-[70px] z-10 bg-gray-50  pt-5 shadow-md">
+          <div className=" z-10 bg-gray-50 shadow-md rounded-xl">
             <StoryList />
             <div className="flex flex-col flex-wrap md:flex-row items-center justify-between bg-white p-4 md:p-5 rounded-xl shadow-sm gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -158,9 +164,39 @@ const QnAForum = () => {
 
       <aside className="hidden lg:block w-2/5 h-screen sticky top-[80px]">
         <div className="bg-white p-5 rounded-xl shadow-sm">
-          <h3 className="font-bold text-lg">Chuyên ngành nổi bật</h3>
+          <h3 className="font-bold text-lg mb-4">Bài viết nổi bật</h3>
+          {loadingTopPosts ? (
+            <p className="text-gray-500 text-sm">Đang tải...</p>
+          ) : topPosts?.length > 0 ? (
+            <ul className="space-y-4">
+              {topPosts.map((post) => (
+                <li
+                  key={post.id}
+                  onClick={() => setSelectedPost(post)}
+                  className="cursor-pointer hover:bg-gray-100 p-3 rounded-lg transition"
+                >
+                  <p className="font-semibold text-sm line-clamp-2">
+                    {post.title}
+                  </p>
+                  <span className="text-xs text-gray-500">
+                    👍 {post._count.likes} | 💬 {post._count.comments}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 text-sm">Chưa có bài viết nổi bật.</p>
+          )}
         </div>
       </aside>
+
+      {selectedPost && (
+        <PostModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+          isOpen={true}
+        />
+      )}
     </div>
   );
 };

@@ -2,24 +2,30 @@ import { useContext, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { FaRegCommentAlt, FaStar } from "react-icons/fa";
-import PostModal from "./PostModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { checkUserLikedAPI, toggleLikeAPI } from "../services/postService";
+import {
+  checkUserLikedAPI,
+  deletePostAPI,
+  toggleLikeAPI,
+} from "../services/postService";
 import { toast } from "react-toastify";
 import { AiFillLike, AiOutlineLike } from "react-icons/ai";
 import AuthActionWrapper from "./AuthActionWrapper";
 import { AuthContext } from "../context/AuthContext";
+import { usePostModal } from "../context/PostModalContext";
+import { BsThreeDots } from "react-icons/bs";
+import ConfirmModal from "./ConfirmModal";
 
 const CONTENT_MAX_LENGTH = 250;
 
 const Post = ({ post }) => {
   const queryClient = useQueryClient();
   const { user } = useContext(AuthContext);
-
+  const { openPostModal, setSelectedImageIndex } = usePostModal();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState({});
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { data: likeData, refetch: refetchLikeStatus } = useQuery({
     queryKey: ["userLiked", post?.id],
@@ -38,6 +44,17 @@ const Post = ({ post }) => {
     },
   });
 
+  const deletePostMutation = useMutation({
+    mutationFn: () => deletePostAPI(post.id),
+    onSuccess: () => {
+      toast.success("Đã xoá bài viết");
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      setShowConfirm(false);
+    },
+    onError: () => {
+      toast.error("Xoá bài viết thất bại");
+    },
+  });
   if (!post) {
     return null;
   }
@@ -103,14 +120,39 @@ const Post = ({ post }) => {
             </div>
           </div>
         </div>
-        {["ADVISOR", "ADMIN"].includes(post.author?.role) && (
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-50 hover:bg-yellow-100 transition-colors">
-            <FaStar className="w-4 h-4 fill-yellow-500" />
-            <span className="text-sm font-medium text-yellow-700">
-              Bài viết nổi bật
+        <div className="flex items-center gap-2">
+          {["ADVISOR", "ADMIN"].includes(post.author?.role) && (
+            <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-yellow-50 text-yellow-700 text-sm font-medium">
+              <FaStar className="w-4 h-4 fill-yellow-500" />
+              Nổi bật
             </span>
-          </button>
-        )}
+          )}
+
+          {/* Menu 3 chấm */}
+          {user?.id === post.authorId && (
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen((p) => !p)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <BsThreeDots size={18} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-32 bg-white border rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setShowConfirm(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                  >
+                    Xoá bài viết
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="px-4 pb-3">
@@ -153,7 +195,7 @@ const Post = ({ post }) => {
               key={imageId}
               className="relative group cursor-pointer"
               onClick={() => {
-                setIsModalOpen(true);
+                openPostModal({ post });
                 setSelectedImageIndex(index);
               }}
             >
@@ -208,7 +250,7 @@ const Post = ({ post }) => {
 
         <button
           className="flex items-center justify-center gap-2 py-2 px-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors font-medium"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => openPostModal({ post })}
         >
           <FaRegCommentAlt className="w-4 h-4" />
           <span>Bình luận</span>
@@ -223,7 +265,7 @@ const Post = ({ post }) => {
             e.target.src = `https://placehold.co/32x32/667eea/ffffff?text=U`;
           }}
         />
-        <div className="flex-1" onClick={() => setIsModalOpen(true)}>
+        <div className="flex-1" onClick={() => openPostModal({ post })}>
           <input
             type="text"
             placeholder="Viết bình luận..."
@@ -231,12 +273,17 @@ const Post = ({ post }) => {
           />
         </div>
       </div>
-
-      <PostModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        post={post}
-        initialImageIndex={selectedImageIndex}
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => deletePostMutation.mutate()}
+        title="Xác nhận xoá"
+        message="Bạn có chắc muốn xoá bài viết này? Hành động này không thể hoàn tác."
+        variant="warning"
+        confirmText="Xoá"
+        cancelText="Hủy"
+        isConfirming={deletePostMutation.isPending}
       />
     </div>
   );

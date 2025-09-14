@@ -81,9 +81,9 @@ export default function ChatBox() {
           optimistic: true,
         })),
         sender: {
-          id: currentUser.id,
-          name: currentUser.name,
-          avatar: currentUser.avatar,
+          id: currentUser?.id,
+          name: currentUser?.name,
+          avatar: currentUser?.avatar,
         },
         createdAt: new Date().toISOString(),
         optimistic: true,
@@ -270,7 +270,7 @@ export default function ChatBox() {
         )}
 
         {allMessages.map((msg, index) => {
-          const isCurrentUser = msg.sender?.id === currentUser.id;
+          const isCurrentUser = msg.sender?.id === currentUser?.id;
           const prevMsg = allMessages[index - 1];
           const showAvatar = !prevMsg || prevMsg.sender?.id !== msg.sender?.id;
 
@@ -285,12 +285,11 @@ export default function ChatBox() {
                 className={`flex-shrink-0 ${isCurrentUser ? "order-2" : ""}`}
               >
                 {showAvatar ? (
-                  <img
+                  <UserAvatar
                     src={
                       isCurrentUser ? currentUser?.avatar : msg.sender?.avatar
                     }
-                    alt={isCurrentUser ? currentUser?.name : msg.sender?.name}
-                    className="w-6 h-6 rounded-full"
+                    name={isCurrentUser ? currentUser?.name : msg.sender?.name}
                   />
                 ) : (
                   <div className="w-6 h-6"></div>

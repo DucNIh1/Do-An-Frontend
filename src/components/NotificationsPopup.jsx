@@ -16,9 +16,9 @@ import {
 } from "react-icons/bs";
 import UserAvatar from "./CommonAvatar";
 import axiosConfig from "../axios/config";
-import { useSocket } from "../context/SocketContext"; // Đảm bảo bạn có SocketContext
+import { useSocket } from "../context/SocketContext";
+import { usePostModal } from "../context/PostModalContext";
 
-// --- Các hàm gọi API thật sự ---
 const fetchNotificationsAPI = async ({ pageParam = 1, queryKey }) => {
   const [, filter] = queryKey;
   const params = {
@@ -48,10 +48,10 @@ const deleteNotificationAPI = async (notificationId) => {
   await axiosConfig.delete(`/api/notifications/${notificationId}`);
   return { notificationId };
 };
-// -----------------------------------------------------------
 
 const NotificationsPopup = () => {
   const { socket } = useSocket();
+  const { openPostModal } = usePostModal();
   const [filter, setFilter] = useState("all");
   const [activeMenu, setActiveMenu] = useState(null);
   const menuRef = useRef(null);
@@ -73,7 +73,6 @@ const NotificationsPopup = () => {
 
   const allNotifications =
     data?.pages.flatMap((page) => page.notifications) ?? [];
-
   const updateCacheOptimistically = (updateFn) => {
     queryClient.setQueryData(queryKey, (oldData) => {
       if (!oldData) return oldData;
@@ -146,10 +145,15 @@ const NotificationsPopup = () => {
     },
   });
 
+  const handleViewNotification = (notification) => {
+    if (notification.postId) {
+      openPostModal({ postId: notification.postId });
+    }
+  };
+
   useEffect(() => {
     if (!socket) return;
     const handleNewNotification = (notificationData) => {
-      console.log("Received new notification:", notificationData);
       const newNotification = {
         id: notificationData.id || Date.now(),
         sender: notificationData.createdBy,
@@ -260,7 +264,10 @@ const NotificationsPopup = () => {
                 />
                 <div
                   className="flex-1"
-                  onClick={() => !n.read && markAsReadMutation.mutate(n.id)}
+                  onClick={() => {
+                    !n.read && markAsReadMutation.mutate(n.id);
+                    handleViewNotification(n);
+                  }}
                 >
                   <p className="text-sm text-gray-800">{n.message}</p>
                   <span

@@ -31,6 +31,7 @@ import {
 import { AuthContext } from "../context/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import AuthActionWrapper from "./AuthActionWrapper";
+import UserAvatar from "./CommonAvatar";
 
 const commentSchema = yup.object().shape({
   text: yup
@@ -47,9 +48,7 @@ export default function PostModal({
   initialImageIndex = 0,
 }) {
   const queryClient = useQueryClient();
-
   const { user } = useContext(AuthContext);
-
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
@@ -246,9 +245,7 @@ export default function PostModal({
 
   const images = post.images || [];
   const authorName = post.author?.name || "Người dùng ẩn danh";
-  const authorAvatar =
-    user?.avatar ||
-    `https://placehold.co/40x40/EFEFEF/AAAAAA?text=${authorName.charAt(0)}`;
+
   const formattedDate = post.createdAt
     ? formatDistanceToNow(new Date(post.createdAt), {
         addSuffix: true,
@@ -345,11 +342,12 @@ export default function PostModal({
           <div className="w-full md:w-1/2 lg:w-2/5 border-l flex flex-col">
             <div className="flex justify-between items-center p-3 border-b">
               <div className="flex items-center gap-3">
-                <img
-                  src={authorAvatar}
-                  alt={authorName}
-                  className="w-9 h-9 rounded-full object-cover"
+                <UserAvatar
+                  name={authorName}
+                  size="w-9 h-9"
+                  src="authorAvatar"
                 />
+
                 <div>
                   <p className="font-semibold text-sm">{authorName}</p>
                   <p className="text-xs text-gray-500 capitalize">
@@ -422,15 +420,13 @@ export default function PostModal({
               ) : allComments.length > 0 ? (
                 allComments.map((comment) => (
                   <div key={comment.id} className="flex gap-2 text-sm group">
-                    <img
-                      src={
-                        comment.author.avatar ||
-                        `https://placehold.co/32x32/EFEFEF/AAAAAA?text=${comment.author.name.charAt(
-                          0
-                        )}`
-                      }
-                      className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
-                    />
+                    <div className="min-w-8">
+                      <UserAvatar
+                        name={comment.author?.name}
+                        src={comment.author?.avatar}
+                      />
+                    </div>
+
                     <div className="flex-grow">
                       <div className="bg-gray-100 rounded-lg p-2 relative">
                         {editingCommentId === comment.id ? (
@@ -535,11 +531,11 @@ export default function PostModal({
             <div className="border-t bg-white p-3 sticky bottom-0">
               <form>
                 <div className="flex items-start gap-3">
-                  <img
-                    src={authorAvatar}
-                    className="w-8 h-8 rounded-full flex-shrink-0 mt-1"
+                  <UserAvatar
+                    name={user.name}
+                    size="w-9 h-9 flex-shrink-0 mt-1"
+                    src={user.avatar}
                   />
-
                   <div className="flex-1">
                     <div className="bg-gray-100 rounded-2xl px-3 py-2">
                       <textarea

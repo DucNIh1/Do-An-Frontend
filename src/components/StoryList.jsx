@@ -3,6 +3,7 @@ import { useRef, useMemo, useState, useEffect, useContext } from "react";
 import { useSocket } from "../context/SocketContext";
 import { AuthContext } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import UserAvatar from "./CommonAvatar";
 
 const StoryList = () => {
   const containerRef = useRef(null);
@@ -88,6 +89,7 @@ const StoryList = () => {
     openConversation({ conversationId: null, receiver: user });
   };
 
+  if (displayedStories.length === 0) return null;
   return (
     <div className="relative w-full">
       <div
@@ -102,10 +104,10 @@ const StoryList = () => {
             onClick={() => handleOpenChat(user)}
           >
             <div className="rounded-full p-[2px]">
-              <img
+              <UserAvatar
+                size="w-16 h-16 rounded-full border-2 border-blue-500 object-cover"
+                name={user.name}
                 src={user.avatar}
-                alt={user.name}
-                className="w-16 h-16 rounded-full border-2 border-blue-500 object-cover"
               />
             </div>
             <p className="text-sm mt-1 text-center truncate w-16">

@@ -117,7 +117,10 @@ const Home = () => {
         </div>
       </section>
 
-      <div className="relative w-full h-screen bg-[url('/banner_login.jpg')] bg-cover bg-center flex justify-end items-center px-10">
+      <div
+        id="tu-van-xet-tuyen"
+        className="relative w-full h-screen bg-[url('/banner_login.jpg')] bg-cover bg-center flex justify-end items-center px-10"
+      >
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white max-w-[450px] w-full flex flex-col px-5 pt-10 pb-5 shadow-sm rounded-md"

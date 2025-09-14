@@ -14,6 +14,10 @@ import QnAForum from "./Pages/QnAForum";
 import AuthContexProvider from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
 import { ChatProvider } from "./context/ChatContext";
+import { PostModalProvider } from "./context/PostModalContext";
+import News from "./Pages/News";
+import PostDetail from "./components/Post/PostDetail";
+import ConsultationRequestsTable from "./Pages/ListConsultationRequest";
 
 const queryClient = new QueryClient();
 const clientId = import.meta.env.VITE_GG_CLIENT_ID;
@@ -38,6 +42,18 @@ const router = createBrowserRouter([
         path: "/tu-van-hoi-dap",
         element: <QnAForum />,
       },
+      {
+        path: "/tin-tuc",
+        element: <News />,
+      },
+      {
+        path: "/tin-tuc/:id",
+        element: <PostDetail />,
+      },
+      {
+        path: "/danh-sach-tu-van",
+        element: <ConsultationRequestsTable />,
+      },
     ],
   },
 ]);
@@ -51,16 +67,18 @@ createRoot(document.getElementById("root")).render(
       closeOnClick
       theme="light"
     />
-    <AuthContexProvider>
-      <SocketProvider>
-        <ChatProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthContexProvider>
+        <PostModalProvider>
           <GoogleOAuthProvider clientId={clientId}>
-            <QueryClientProvider client={queryClient}>
-              <RouterProvider router={router} />
-            </QueryClientProvider>
+            <SocketProvider>
+              <ChatProvider>
+                <RouterProvider router={router} />
+              </ChatProvider>
+            </SocketProvider>
           </GoogleOAuthProvider>
-        </ChatProvider>
-      </SocketProvider>
-    </AuthContexProvider>
+        </PostModalProvider>
+      </AuthContexProvider>
+    </QueryClientProvider>
   </StrictMode>
 );

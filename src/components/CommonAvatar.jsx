@@ -6,7 +6,7 @@ const UserAvatar = ({ src = "", alt = "", size = "w-8 h-8", name }) => {
   if (imgError || !src) {
     return (
       <div
-        className={`${size} bg-deepBlue rounded-full flex items-center justify-center text-white text-sm font-medium`}
+        className={`${size}  bg-deepBlue rounded-full flex items-center justify-center text-white text-sm font-medium`}
       >
         {name.charAt(0).toUpperCase()}
       </div>

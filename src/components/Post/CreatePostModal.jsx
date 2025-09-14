@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useContext,
+} from "react";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -12,8 +18,10 @@ import {
   uploadImagesAPI,
   createPostAPI,
   deletePostAPI,
-} from "../services/postService";
-import axiosConfig from "../axios/config";
+} from "../../services/postService";
+import axiosConfig from "../../axios/config";
+import { AuthContext } from "../../context/AuthContext";
+import UserAvatar from "../CommonAvatar";
 
 const postSchema = yup.object().shape({
   title: yup.string().trim().required("Tiêu đề không được để trống."),
@@ -23,7 +31,7 @@ const postSchema = yup.object().shape({
 
 const CreatePostModal = () => {
   const queryClient = useQueryClient();
-
+  const { user } = useContext(AuthContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
 
@@ -181,7 +189,7 @@ const CreatePostModal = () => {
 
       {isModalOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[999]"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={closeModal}
         >
           <form
@@ -202,11 +210,9 @@ const CreatePostModal = () => {
 
             <div className="overflow-y-auto flex-grow p-4 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                  DN
-                </div>
+                <UserAvatar name={user.name} size="w-9 h-9" src={user.avatar} />
                 <div className="w-full">
-                  <h4 className="font-semibold text-gray-800">Đỗ Đức Ninh</h4>
+                  <h4 className="font-semibold text-gray-800">{user.name}</h4>
                   <Controller
                     name="majorId"
                     control={control}
