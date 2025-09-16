@@ -10,37 +10,61 @@ import HeroFeatured from "../components/Post/HeroFeatured";
 import SmallCard from "../components/Post/SmallCard";
 import formatDate from "../utils/formatDate";
 import { useNavigate } from "react-router";
+import Select from "react-select";
 
 export default function NewsPage() {
-  const [page, setPage] = useState(1);
   const navigate = useNavigate();
-  // 1. Featured posts
+  const [page, setPage] = useState(1);
+  const [selectedMajor, setSelectedMajor] = useState(null);
+
   const { data: featuredData, isLoading: loadingFeatured } = useQuery({
     queryKey: ["featuredPosts"],
     queryFn: async () => {
       const res = await axiosConfig.get("/api/posts", {
-        params: { isFeatured: true, sort: "desc", limit: 100 },
+        params: {
+          isFeatured: true,
+          sort: "desc",
+          limit: 100,
+          isFromSchool: true,
+        },
       });
       return res.data;
     },
   });
-  // 2. Latest 6 posts
   const { data: latestData, isLoading: loadingLatest } = useQuery({
     queryKey: ["latestPosts"],
     queryFn: async () => {
       const res = await axiosConfig.get("/api/posts", {
-        params: { limit: 6, sort: "desc" },
+        params: { limit: 6, sort: "desc", isFromSchool: true },
       });
       return res.data;
     },
   });
 
-  // 3. Other posts with pagination
+  const { data: majorsData } = useQuery({
+    queryKey: ["majors"],
+    queryFn: async () => {
+      const res = await axiosConfig.get("/api/majors", {
+        params: { limit: 1000 },
+      });
+      return res.data.majors.map((m) => ({
+        value: m.id,
+        label: m.name,
+      }));
+    },
+  });
+
   const { data: othersData, isLoading: loadingOthers } = useQuery({
-    queryKey: ["othersPosts", page],
+    queryKey: ["othersPosts", page, selectedMajor?.value],
     queryFn: async () => {
       const res = await axiosConfig.get("/api/posts", {
-        params: { page, limit: 9, sort: "desc", isFromSchool: true },
+        params: {
+          page,
+          limit: 9,
+          sort: "desc",
+          isFromSchool: true,
+          majorId: selectedMajor?.value || undefined,
+        },
       });
       return res.data;
     },
@@ -84,7 +108,7 @@ export default function NewsPage() {
         ></Swiper>
       </header>
 
-      <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <section className="mb-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Bên trái: Tin nổi bật */}
         <div className="lg:col-span-2">
           <h2 className="text-2xl font-bold mb-4">Tin nổi bật</h2>
@@ -107,7 +131,25 @@ export default function NewsPage() {
         </aside>
       </section>
 
-      {/* Các bài viết khác */}
+      <div className="mb-6 ml-full w-full  flex gap-3 items-center ">
+        <Select
+          options={majorsData}
+          value={selectedMajor}
+          onChange={(val) => {
+            setSelectedMajor(val);
+            setPage(1);
+          }}
+          placeholder="Lọc theo chuyên ngành..."
+          isClearable
+        />
+        <span className="text-deepBlue font-semibold">
+          Lọc bài viết theo chuyên ngành
+        </span>
+      </div>
+
+      {othersData?.posts?.length === 0 && (
+        <p className="text-center my-40">Không tìm thấy bài viết nào</p>
+      )}
       {othersData?.posts?.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold mb-4">Các bài viết khác</h2>

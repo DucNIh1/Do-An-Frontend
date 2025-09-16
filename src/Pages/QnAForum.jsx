@@ -164,7 +164,7 @@ const QnAForum = () => {
 
       <aside className="hidden lg:block w-2/5 h-screen sticky top-[80px]">
         <div className="bg-white p-5 rounded-xl shadow-sm">
-          <h3 className="font-bold text-lg mb-4">Bài viết nổi bật</h3>
+          <h3 className="font-bold text-lg mb-4">Top các câu hỏi nổi bật</h3>
           {loadingTopPosts ? (
             <p className="text-gray-500 text-sm">Đang tải...</p>
           ) : topPosts?.length > 0 ? (

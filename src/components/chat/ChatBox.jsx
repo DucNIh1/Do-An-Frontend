@@ -47,7 +47,6 @@ export default function ChatBox() {
       getNextPageParam: (lastPage) => lastPage.pagination?.nextCursor,
       enabled: !!conversation?.id || !!receiverId,
     });
-
   const allMessages = React.useMemo(() => {
     return (
       data?.pages
@@ -219,7 +218,7 @@ export default function ChatBox() {
   if (!selectedConversation) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 w-[350px] h-[500px] flex flex-col border rounded-lg shadow-lg bg-white z-[3000]">
+    <div className="fixed bottom-1 right-[90px] w-[350px] h-[500px] flex flex-col border rounded-lg shadow-lg bg-white z-[30000000]">
       <div className="flex items-center justify-between p-2 border-b bg-gray-100">
         <div className="flex">
           <div className="flex items-center gap-2">

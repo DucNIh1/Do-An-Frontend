@@ -7,6 +7,7 @@ import "react-quill/dist/quill.snow.css";
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const { data: postData, isLoading } = useQuery({
     queryKey: ["post", id],
     queryFn: async () => {
@@ -20,7 +21,7 @@ export default function PostDetail() {
     queryKey: ["latestPosts"],
     queryFn: async () => {
       const res = await axiosConfig.get("/api/posts", {
-        params: { limit: 6, sort: "desc" },
+        params: { limit: 6, sort: "desc", isFromSchool: true },
       });
       return res.data;
     },

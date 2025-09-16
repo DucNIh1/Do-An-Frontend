@@ -30,8 +30,7 @@ export default function ChatMenu({ conversation, isGroupChat, onClose }) {
   });
 
   const deleteConversationMutation = useMutation({
-    mutationFn: () =>
-      axiosConfig.delete(`/api/conversations/${conversation.id}`),
+    mutationFn: () => axiosConfig.delete(`/api/messages/${conversation.id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(["conversations"]);
       handleModalClose();

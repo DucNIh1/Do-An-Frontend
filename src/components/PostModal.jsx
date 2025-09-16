@@ -32,6 +32,8 @@ import { AuthContext } from "../context/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import AuthActionWrapper from "./AuthActionWrapper";
 import UserAvatar from "./CommonAvatar";
+import RatePostModal from "./Post/RatePostModal";
+import RateAdvisorModal from "./Post/RateAdvisorModal";
 
 const commentSchema = yup.object().shape({
   text: yup
@@ -55,7 +57,9 @@ export default function PostModal({
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingText, setEditingText] = useState("");
   const [commentToDelete, setCommentToDelete] = useState(null);
-
+  const [showInformModal, setShowInformModal] = useState(false);
+  const [rateAdvisorModal, setRateAdvisorModal] = useState(null);
+  const [isOpenRatePost, setIsOpenRatePost] = useState(false);
   const commentsContainerRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -239,6 +243,15 @@ export default function PostModal({
     };
   }, [selectedImages]);
 
+  const isNotAdvisorForPostMajor =
+    user?.majorId && user?.majorId !== post?.majorId;
+
+  useEffect(() => {
+    if (isNotAdvisorForPostMajor) {
+      setShowInformModal(true);
+    }
+  }, [isNotAdvisorForPostMajor]);
+
   if (!isOpen || !post) {
     return null;
   }
@@ -381,32 +394,43 @@ export default function PostModal({
                 )}
               </p>
             </div>
-            <div className="flex items-center gap-4 mt-3 pt-2">
-              <AuthActionWrapper onClick={() => toggleLikeMutation.mutate()}>
-                <button
-                  disabled={toggleLikeMutation.isPending}
-                  className="flex items-center gap-2 text-sm hover:bg-gray-100 rounded-full px-3 py-1 transition-colors"
-                >
-                  {likeData?.isLiked ? (
-                    <AiFillLike className="fill-deepBlue" />
-                  ) : (
-                    <AiOutlineLike />
-                  )}
-                  <span
-                    className={
-                      likeData?.isLiked
-                        ? "text-deepBlue font-medium"
-                        : "text-gray-600"
-                    }
+            <div className="flex items-center justify-between gap-4 mt-3 pt-2 pr-4">
+              <div className="flex items-center gap-4">
+                <AuthActionWrapper onClick={() => toggleLikeMutation.mutate()}>
+                  <button
+                    disabled={toggleLikeMutation.isPending}
+                    className="flex items-center gap-2 text-sm hover:bg-gray-100 rounded-full px-3 py-1 transition-colors"
                   >
-                    {likeData?.totalLikes || 0} lượt thích
-                  </span>
-                </button>
-              </AuthActionWrapper>
+                    {likeData?.isLiked ? (
+                      <AiFillLike className="fill-deepBlue" />
+                    ) : (
+                      <AiOutlineLike />
+                    )}
+                    <span
+                      className={
+                        likeData?.isLiked
+                          ? "text-deepBlue font-medium"
+                          : "text-gray-600"
+                      }
+                    >
+                      {likeData?.totalLikes || 0} lượt thích
+                    </span>
+                  </button>
+                </AuthActionWrapper>
 
-              <span className="text-sm text-gray-600">
-                {totalComments} bình luận
-              </span>
+                <span className="text-sm text-gray-600">
+                  {totalComments} bình luận
+                </span>
+              </div>
+
+              {user?.majorId && user?.majorId === post?.majorId && (
+                <button
+                  onClick={() => setIsOpenRatePost(true)}
+                  className="bg-[#fecb4e] cursor-pointer hover:bg-yellow-500 text-sm font-semibold rounded-md text-textBlue px-2 py-1"
+                >
+                  Chấm điểm
+                </button>
+              )}
             </div>
             <div
               ref={commentsContainerRef}
@@ -456,14 +480,30 @@ export default function PostModal({
                           </div>
                         ) : (
                           <>
-                            <p>
-                              <span className="font-semibold">
-                                {comment.author.name}
+                            <p className="flex justify-between">
+                              <span className="font-semibold flex-1">
+                                {comment?.author?.name}
                               </span>
+                              {comment?.author?.role === "ADVISOR" &&
+                                post.authorId === user?.id &&
+                                post?.author?.role === "STUDENT" && (
+                                  <button
+                                    onClick={() =>
+                                      setRateAdvisorModal((prev) => ({
+                                        ...prev,
+                                        advisor: comment?.author,
+                                        isOpen: true,
+                                      }))
+                                    }
+                                    className="bg-[#fecb4e] text-textBlue font-semibold px-2 py-1 rounded-md hover:bg-yellow-500"
+                                  >
+                                    Đánh giá người tư vấn
+                                  </button>
+                                )}
                             </p>
                             <p className="text-gray-800 mt-1">{comment.text}</p>
 
-                            {comment.Images && comment.Images.length > 0 && (
+                            {comment?.Images && comment.Images.length > 0 && (
                               <div
                                 className={`grid gap-1 mt-2 ${getImageGridClass(
                                   comment.Images.length
@@ -529,87 +569,94 @@ export default function PostModal({
             </div>
 
             <div className="border-t bg-white p-3 sticky bottom-0">
-              <form>
-                <div className="flex items-start gap-3">
-                  <UserAvatar
-                    name={user.name}
-                    size="w-9 h-9 flex-shrink-0 mt-1"
-                    src={user.avatar}
-                  />
-                  <div className="flex-1">
-                    <div className="bg-gray-100 rounded-2xl px-3 py-2">
-                      <textarea
-                        {...register("text")}
-                        placeholder="Viết bình luận..."
-                        className="w-full bg-transparent border-none focus:ring-0 resize-none outline-none text-sm placeholder-gray-500"
-                        rows="1"
-                        onInput={(e) => {
-                          e.target.style.height = "auto";
-                          e.target.style.height = e.target.scrollHeight + "px";
-                        }}
-                      />
+              {user && (
+                <form>
+                  <div className="flex items-start gap-3">
+                    <UserAvatar
+                      name={user?.name}
+                      size="w-9 h-9 flex-shrink-0 mt-1"
+                      src={user?.avatar}
+                    />
+                    <div className="flex-1">
+                      <div className="bg-gray-100 rounded-2xl px-3 py-2">
+                        <textarea
+                          {...register("text")}
+                          placeholder={
+                            isNotAdvisorForPostMajor
+                              ? "Bài viết này không thuộc phạm vi tư vấn của bạn"
+                              : "Viết bình luận..."
+                          }
+                          className="w-full bg-transparent border-none focus:ring-0 resize-none outline-none text-sm min-h-10 placeholder-gray-500"
+                          rows="1"
+                          onInput={(e) => {
+                            e.target.style.height = "auto";
+                            e.target.style.height =
+                              e.target.scrollHeight + "px";
+                          }}
+                        />
 
-                      {selectedImages.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-200">
-                          <div className="grid grid-cols-4 gap-2">
-                            {selectedImages.map((image) => (
-                              <div key={image.id} className="relative group">
-                                <img
-                                  src={image.previewUrl}
-                                  alt="Preview"
-                                  className="w-full h-14 object-cover rounded-md"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => removeImage(image.id)}
-                                  className="absolute -top-1.5 -right-1.5 bg-gray-700 text-white w-5 h-5 flex items-center justify-center rounded-full text-xs opacity-50 group-hover:opacity-100 hover:!opacity-100 hover:bg-red-500 transition-all duration-200"
-                                >
-                                  <IoClose />
-                                </button>
-                              </div>
-                            ))}
+                        {selectedImages.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <div className="grid grid-cols-4 gap-2">
+                              {selectedImages.map((image) => (
+                                <div key={image.id} className="relative group">
+                                  <img
+                                    src={image.previewUrl}
+                                    alt="Preview"
+                                    className="w-full h-14 object-cover rounded-md"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeImage(image.id)}
+                                    className="absolute -top-1.5 -right-1.5 bg-gray-700 text-white w-5 h-5 flex items-center justify-center rounded-full text-xs opacity-50 group-hover:opacity-100 hover:!opacity-100 hover:bg-red-500 transition-all duration-200"
+                                  >
+                                    <IoClose />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between mt-1 ml-2">
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            title="Đính kèm ảnh"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-gray-500 hover:text-deepBlue p-1 rounded-full"
+                          >
+                            <BsImages size={18} />
+                          </button>
                         </div>
+                        <AuthActionWrapper
+                          onClick={handleSubmit(onSubmitComment)}
+                        >
+                          <button
+                            disabled={
+                              createCommentMutation.isPending ||
+                              (!commentValue.trim() &&
+                                selectedImages.length === 0)
+                            }
+                            className="text-deepBlue disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded-full font-semibold flex items-center gap-2 hover:bg-gray-200"
+                          >
+                            <FaRegPaperPlane
+                              size={16}
+                              className="fill-deepBlue  transition-colors duration-200 cursor-pointer"
+                            />
+                          </button>
+                        </AuthActionWrapper>
+                      </div>
+                      {errors.text && (
+                        <p className="text-red-500 text-xs mt-1 ml-2">
+                          {errors.text.message}
+                        </p>
                       )}
                     </div>
-
-                    <div className="flex items-center justify-between mt-1 ml-2">
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          title="Đính kèm ảnh"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="text-gray-500 hover:text-deepBlue p-1 rounded-full"
-                        >
-                          <BsImages size={18} />
-                        </button>
-                      </div>
-                      <AuthActionWrapper
-                        onClick={handleSubmit(onSubmitComment)}
-                      >
-                        <button
-                          disabled={
-                            createCommentMutation.isPending ||
-                            (!commentValue.trim() &&
-                              selectedImages.length === 0)
-                          }
-                          className="text-deepBlue disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded-full font-semibold flex items-center gap-2 hover:bg-gray-200"
-                        >
-                          <FaRegPaperPlane
-                            size={16}
-                            className="fill-deepBlue  transition-colors duration-200 cursor-pointer"
-                          />
-                        </button>
-                      </AuthActionWrapper>
-                    </div>
-                    {errors.text && (
-                      <p className="text-red-500 text-xs mt-1 ml-2">
-                        {errors.text.message}
-                      </p>
-                    )}
                   </div>
-                </div>
-              </form>
+                </form>
+              )}
             </div>
           </div>
         </motion.div>
@@ -635,6 +682,31 @@ export default function PostModal({
         variant={"warning"}
         isConfirming={deleteCommentMutation.isPending}
         confirmText={"Vẫn xóa"}
+      />
+
+      <ConfirmModal
+        isOpen={showInformModal}
+        onClose={() => setShowInformModal(false)}
+        onConfirm={() => setShowInformModal(false)}
+        title={"Thông báo phạm vi tư vấn"}
+        message={
+          "Bài viết này không thuộc phạm vi tư vấn của bạn, vui lòng chú ý trước khi tư vấn"
+        }
+        variant={"notice"}
+        confirmText={"Đã hiểu"}
+      />
+
+      <RatePostModal
+        isOpen={isOpenRatePost}
+        onClose={() => setIsOpenRatePost(false)}
+        post={post}
+      />
+
+      <RateAdvisorModal
+        post={post}
+        isOpen={rateAdvisorModal?.isOpen}
+        onClose={() => setRateAdvisorModal(null)}
+        advisor={rateAdvisorModal?.advisor}
       />
     </AnimatePresence>
   );

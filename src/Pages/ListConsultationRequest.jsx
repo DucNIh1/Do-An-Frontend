@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { MdRefresh } from "react-icons/md";
-import Select from "react-select";
 import axiosConfig from "../axios/config";
 import ConfirmModal from "../components/ConfirmModal";
 import useDebounce from "../hooks/useDebounce";
+import { AuthContext } from "../context/AuthContext";
 
 const statusOptions = [
   { value: "", label: "Tất cả" },
@@ -15,6 +15,7 @@ const statusOptions = [
 ];
 
 export default function ConsultationRequestsTable() {
+  const { user } = useContext(AuthContext);
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const limit = 10;
@@ -46,7 +47,7 @@ export default function ConsultationRequestsTable() {
           page,
           limit,
           search: debouncedSearch || "",
-          majorId: filterMajor ? filterMajor?.value : "",
+          majorId: user.majorId,
           sort: sortOrder,
           status: statusFilter,
         },
@@ -174,22 +175,8 @@ export default function ConsultationRequestsTable() {
             setPage(1);
             setFilterEmail(e.target.value);
           }}
-          className="px-3 py-2 border rounded w-full sm:w-1/3  "
+          className="px-3 py-2 border rounded w-full flex-1 "
         />
-
-        <div className="w-full sm:w-1/4">
-          <Select
-            styles={customStyles}
-            options={majorsData || []}
-            value={filterMajor}
-            onChange={(opt) => {
-              setFilterMajor(opt);
-              setPage(1);
-            }}
-            placeholder="Chọn ngành..."
-            isClearable
-          />
-        </div>
 
         <select
           value={sortOrder}
@@ -197,7 +184,7 @@ export default function ConsultationRequestsTable() {
             setPage(1);
             setSortOrder(e.target.value);
           }}
-          className="px-3 py-2 border rounded w-full sm:w-1/4"
+          className="px-3 py-2 border rounded w-full flex-1"
         >
           <option value="desc">Mới nhất</option>
           <option value="asc">Cũ nhất</option>
@@ -209,7 +196,7 @@ export default function ConsultationRequestsTable() {
             setPage(1);
             setStatusFilter(e.target.value);
           }}
-          className="px-3 py-2 border rounded text-sm "
+          className="px-3 py-2 border rounded text-sm flex-1"
         >
           {statusOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>

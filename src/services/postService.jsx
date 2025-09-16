@@ -115,3 +115,40 @@ export const getTopPostsAPI = async (limit = 5) => {
   const res = await axiosConfig.get(`/api/posts/top?limit=${limit}`);
   return res.data.data;
 };
+
+export const ratePostAPI = async ({ postId, score, comment }) => {
+  const { data } = await axiosConfig.post(`/api/posts/${postId}/rate`, {
+    score,
+    comment,
+  });
+  return data;
+};
+
+export const checkUserRatedPostAPI = async (id) => {
+  const { data } = await axiosConfig.get(`/api/posts/${id}/check-rating`);
+  return data;
+};
+
+export const updateRatePostAPI = async ({ postId, score, comment }) => {
+  const res = await axiosConfig.patch(`/api/posts/${postId}/rating`, {
+    score,
+    comment,
+  });
+  return res.data.data;
+};
+
+export const rateAdvisor = async (advisorId, postId, score, comment) => {
+  const res = await axiosConfig.post(`/api/users/${advisorId}/rate`, {
+    postId,
+    score,
+    comment,
+  });
+  return res.data.data;
+};
+
+export const checkAdvisorRated = async (advisorId, postId) => {
+  const res = await axiosConfig.get(`/api/users/${advisorId}/check-rating`, {
+    params: { postId },
+  });
+  return res.data;
+};
