@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import TextareaAutosize from "react-textarea-autosize"; // <-- THÊM IMPORT
 
 import { AiFillLike, AiOutlineClose, AiOutlineLike } from "react-icons/ai";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
@@ -36,11 +37,7 @@ import RatePostModal from "./Post/RatePostModal";
 import RateAdvisorModal from "./Post/RateAdvisorModal";
 
 const commentSchema = yup.object().shape({
-  text: yup
-    .string()
-    .trim()
-    .optional()
-    .max(1000, "Bình luận không được quá 1000 ký tự"),
+  text: yup.string().trim().optional(),
 });
 
 export default function PostModal({
@@ -115,6 +112,7 @@ export default function PostModal({
       setSelectedImages([]);
       refetchComments();
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      // <-- BỎ LOGIC RESET CHIỀU CAO, THƯ VIỆN SẼ TỰ XỬ LÝ
     },
     onError: (error) => {
       toast.error(
@@ -394,8 +392,8 @@ export default function PostModal({
                 )}
               </p>
             </div>
-            <div className="flex items-center justify-between gap-4 mt-3 pt-2 pr-4">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-4 mt-3 pt-2 pr-4 pb-4">
+              <div className="flex items-center gap-4 ">
                 <AuthActionWrapper onClick={() => toggleLikeMutation.mutate()}>
                   <button
                     disabled={toggleLikeMutation.isPending}
@@ -579,20 +577,17 @@ export default function PostModal({
                     />
                     <div className="flex-1">
                       <div className="bg-gray-100 rounded-2xl px-3 py-2">
-                        <textarea
+                        <TextareaAutosize
                           {...register("text")}
                           placeholder={
                             isNotAdvisorForPostMajor
                               ? "Bài viết này không thuộc phạm vi tư vấn của bạn"
                               : "Viết bình luận..."
                           }
-                          className="w-full bg-transparent border-none focus:ring-0 resize-none outline-none text-sm min-h-10 placeholder-gray-500"
-                          rows="1"
-                          onInput={(e) => {
-                            e.target.style.height = "auto";
-                            e.target.style.height =
-                              e.target.scrollHeight + "px";
-                          }}
+                          className="w-full bg-transparent border-none focus:ring-0 resize-none outline-none text-sm placeholder-gray-500"
+                          minRows={1}
+                          maxRows={10}
+                          cacheMeasurements
                         />
 
                         {selectedImages.length > 0 && (

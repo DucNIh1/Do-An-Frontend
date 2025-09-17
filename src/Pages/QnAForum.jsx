@@ -12,6 +12,8 @@ import { getPostsAPI, getTopPostsAPI } from "../services/postService";
 import StoryList from "../components/StoryList";
 import CreatePostModal from "../components/Post/CreatePostModal";
 import PostModal from "../components/PostModal";
+import TopPostsSidebar from "../components/Post/TopPostsSidebar";
+import AdvisorList from "../components/AdvisorList";
 const QnAForum = () => {
   const { user } = useContext(AuthContext);
 
@@ -161,32 +163,22 @@ const QnAForum = () => {
           )}
         </div>
       </section>
-
-      <aside className="hidden lg:block w-2/5 h-screen sticky top-[80px]">
-        <div className="bg-white p-5 rounded-xl shadow-sm">
-          <h3 className="font-bold text-lg mb-4">Top các câu hỏi nổi bật</h3>
-          {loadingTopPosts ? (
-            <p className="text-gray-500 text-sm">Đang tải...</p>
-          ) : topPosts?.length > 0 ? (
-            <ul className="space-y-4">
-              {topPosts.map((post) => (
-                <li
-                  key={post.id}
-                  onClick={() => setSelectedPost(post)}
-                  className="cursor-pointer hover:bg-gray-100 p-3 rounded-lg transition"
-                >
-                  <p className="font-semibold text-sm line-clamp-2">
-                    {post.title}
-                  </p>
-                  <span className="text-xs text-gray-500">
-                    👍 {post._count.likes} | 💬 {post._count.comments}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 text-sm">Chưa có bài viết nổi bật.</p>
-          )}
+      <aside className="w-full lg:w-2/5 h-screen sticky top-20 flex flex-col gap-8">
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+            Tư vấn viên
+          </h2>
+          <AdvisorList />
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+            Câu hỏi nổi bật
+          </h2>
+          <TopPostsSidebar
+            loadingTopPosts={loadingTopPosts}
+            topPosts={topPosts}
+            setSelectedPost={(post) => setSelectedPost(post)}
+          />
         </div>
       </aside>
 
