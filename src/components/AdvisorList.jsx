@@ -1,26 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import AdvisorDetailModal from "./AdvisorDetailModal";
 import axiosConfig from "../axios/config";
 import UserAvatar from "./CommonAvatar";
+import Select from "react-select";
+import customStyles from "../utils/inputSelectStyles";
 
-const fetchAdvisors = async () => {
-  const { data } = await axiosConfig.get("/api/users/advisors-with-ratings");
+const fetchAdvisors = async (majorId) => {
+  const { data } = await axiosConfig.get("/api/users/advisors-with-ratings", {
+    params: { majorId: majorId || "" },
+  });
   return data.data;
 };
 
 export default function AdvisorList() {
   const [selectedAdvisor, setSelectedAdvisor] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedMajor, setSelectedMajor] = useState(null);
+
+  const { data: majors } = useQuery({
+    queryKey: ["majors"],
+    queryFn: async () => {
+      const res = await axiosConfig.get("/api/majors", {
+        params: { limit: 1000 },
+      });
+      return res.data.majors;
+    },
+  });
+
+  const majorOptions =
+    majors?.map((m) => ({ value: m.id, label: m.name })) || [];
 
   const {
     data: advisors,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["advisors"],
-    queryFn: fetchAdvisors,
+    queryKey: ["advisors", selectedMajor?.value],
+    queryFn: () => fetchAdvisors(selectedMajor?.value),
   });
 
   const getItemsPerPage = () => {
@@ -32,20 +50,19 @@ export default function AdvisorList() {
 
   const [itemsPerPage, setItemsPerPage] = useState(getItemsPerPage);
 
-  useState(() => {
+  useEffect(() => {
     const handleResize = () => {
       setItemsPerPage(getItemsPerPage());
       setCurrentIndex(0);
     };
-
     if (typeof window !== "undefined") {
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
 
-  const totalPages = Math.ceil(advisors.length / itemsPerPage);
-  const currentAdvisors = advisors.slice(
+  const totalPages = Math.ceil(advisors?.length / itemsPerPage || 1);
+  const currentAdvisors = advisors?.slice(
     currentIndex * itemsPerPage,
     (currentIndex + 1) * itemsPerPage
   );
@@ -59,6 +76,7 @@ export default function AdvisorList() {
   };
 
   const canShowNavigation = totalPages > 1;
+
   if (isLoading) {
     return (
       <div className="text-center py-8">Đang tải danh sách tư vấn viên...</div>
@@ -71,8 +89,24 @@ export default function AdvisorList() {
       </div>
     );
   }
+
   return (
     <div className="relative">
+      <div className="flex justify-end mb-4 w-full">
+        <Select
+          options={majorOptions}
+          isClearable
+          placeholder="Chọn ngành..."
+          value={selectedMajor}
+          onChange={(option) => {
+            setCurrentIndex(0);
+            setSelectedMajor(option);
+          }}
+          className="text-sm w-full"
+          styles={customStyles}
+        />
+      </div>
+
       {canShowNavigation && (
         <>
           <button
@@ -94,7 +128,7 @@ export default function AdvisorList() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {currentAdvisors.map((advisor) => (
+        {currentAdvisors?.map((advisor) => (
           <div
             key={advisor.id}
             className="bg-gray-50 rounded-lg overflow-hidden cursor-pointer hover:bg-gray-100 transition-colors duration-300 border border-gray-100"
@@ -104,6 +138,7 @@ export default function AdvisorList() {
               <UserAvatar
                 src={advisor.avatar}
                 name={advisor.name}
+                userId={advisor.id}
                 size="w-16 h-16 border-2 border-indigo-400 mb-3"
               />
 

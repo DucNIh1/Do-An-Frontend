@@ -15,6 +15,7 @@ import { AuthContext } from "../context/AuthContext";
 import { usePostModal } from "../context/PostModalContext";
 import { BsThreeDots } from "react-icons/bs";
 import ConfirmModal from "./ConfirmModal";
+import UserAvatar from "./CommonAvatar";
 
 const CONTENT_MAX_LENGTH = 250;
 
@@ -93,19 +94,22 @@ const Post = ({ post }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <img
+          <UserAvatar
             src={authorAvatar}
             alt={`${authorName} avatar`}
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
-            onError={(e) => {
-              e.target.src = `https://placehold.co/40x40/667eea/ffffff?text=${authorName.charAt(
-                0
-              )}`;
-            }}
+            name={authorName}
+            size="w-10 h-10 ring-2 ring-gray-100"
+            userId={post.author?.id}
           />
+
           <div>
-            <h4 className="font-semibold text-gray-900 text-sm">
-              {authorName}
+            <h4 className="font-semibold text-gray-900 text-sm flex gap-2 mb-1">
+              <span>{authorName}</span>
+              {post.author?.role === "ADVISOR" && (
+                <span className="text-xs bg-blue-100 text-deepBlue font-bold px-2 py-0.5 rounded-full">
+                  Tư vấn viên
+                </span>
+              )}
             </h4>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>{formattedDate}</span>
@@ -128,7 +132,6 @@ const Post = ({ post }) => {
             </span>
           )}
 
-          {/* Menu 3 chấm */}
           {user?.id === post.authorId && (
             <div className="relative">
               <button

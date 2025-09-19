@@ -59,7 +59,6 @@ export default function PostModal({
   const [isOpenRatePost, setIsOpenRatePost] = useState(false);
   const commentsContainerRef = useRef(null);
   const fileInputRef = useRef(null);
-
   const {
     register,
     handleSubmit,
@@ -112,7 +111,6 @@ export default function PostModal({
       setSelectedImages([]);
       refetchComments();
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      // <-- BỎ LOGIC RESET CHIỀU CAO, THƯ VIỆN SẼ TỰ XỬ LÝ
     },
     onError: (error) => {
       toast.error(
@@ -301,7 +299,7 @@ export default function PostModal({
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-lg w-full max-w-4xl lg:max-w-5xl h-[90vh] flex flex-col md:flex-row shadow-2xl"
+          className="bg-white rounded-lg w-full max-w-4xl lg:max-w-6xl h-[90vh] flex flex-col md:flex-row shadow-2xl"
         >
           <button
             onClick={onClose}
@@ -310,7 +308,7 @@ export default function PostModal({
             <AiOutlineClose className="w-6 h-6" />
           </button>
 
-          <div className="relative w-full md:w-1/2 lg:w-3/5 bg-black flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
+          <div className="relative w-full md:w-1/2 lg:w-[60%] bg-black flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
             {images.length > 0 ? (
               <>
                 <AnimatePresence mode="wait">
@@ -350,13 +348,14 @@ export default function PostModal({
             )}
           </div>
 
-          <div className="w-full md:w-1/2 lg:w-2/5 border-l flex flex-col">
+          <div className="w-full md:w-1/2 lg:w-[40%] border-l flex flex-col">
             <div className="flex justify-between items-center p-3 border-b">
               <div className="flex items-center gap-3">
                 <UserAvatar
                   name={authorName}
                   size="w-9 h-9"
                   src="authorAvatar"
+                  userId={post?.author?.id}
                 />
 
                 <div>
@@ -421,14 +420,16 @@ export default function PostModal({
                 </span>
               </div>
 
-              {user?.majorId && user?.majorId === post?.majorId && (
-                <button
-                  onClick={() => setIsOpenRatePost(true)}
-                  className="bg-[#fecb4e] cursor-pointer hover:bg-yellow-500 text-sm font-semibold rounded-md text-textBlue px-2 py-1"
-                >
-                  Chấm điểm
-                </button>
-              )}
+              {user?.majorId &&
+                post.author?.role === "STUDENT" &&
+                user?.majorId === post?.majorId && (
+                  <button
+                    onClick={() => setIsOpenRatePost(true)}
+                    className="bg-[#fecb4e] cursor-pointer hover:bg-yellow-500 text-sm font-semibold rounded-md text-textBlue px-2 py-1"
+                  >
+                    Chấm điểm
+                  </button>
+                )}
             </div>
             <div
               ref={commentsContainerRef}
@@ -446,11 +447,18 @@ export default function PostModal({
                       <UserAvatar
                         name={comment.author?.name}
                         src={comment.author?.avatar}
+                        userId={comment.author?.id}
                       />
                     </div>
 
                     <div className="flex-grow">
-                      <div className="bg-gray-100 rounded-lg p-2 relative">
+                      <div
+                        className={`rounded-lg px-4 py-2 relative ${
+                          comment.author?.role === "ADVISOR"
+                            ? "bg-yellow-50"
+                            : "bg-gray-100"
+                        }`}
+                      >
                         {editingCommentId === comment.id ? (
                           <div className="space-y-3">
                             <textarea
@@ -478,10 +486,27 @@ export default function PostModal({
                           </div>
                         ) : (
                           <>
-                            <p className="flex justify-between">
-                              <span className="font-semibold flex-1">
-                                {comment?.author?.name}
-                              </span>
+                            <div className="flex justify-between items-center mb-2">
+                              {/* Phần thông tin tác giả */}
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-gray-900 text-sm">
+                                    {comment?.author?.name}
+                                  </span>
+                                  {comment.author.role === "ADVISOR" && (
+                                    <span className="text-xs bg-blue-100 text-deepBlue font-bold px-2 py-0.5 rounded-full">
+                                      Tư vấn viên
+                                    </span>
+                                  )}
+                                </div>
+                                {comment.author.role === "ADVISOR" && (
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {comment?.author?.major?.name}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Nút đánh giá */}
                               {comment?.author?.role === "ADVISOR" &&
                                 post.authorId === user?.id &&
                                 post?.author?.role === "STUDENT" && (
@@ -493,12 +518,12 @@ export default function PostModal({
                                         isOpen: true,
                                       }))
                                     }
-                                    className="bg-[#fecb4e] text-textBlue font-semibold px-2 py-1 rounded-md hover:bg-yellow-500"
+                                    className="bg-yellow-400 text-gray-800 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-yellow-500 transition-colors flex-shrink-0"
                                   >
-                                    Đánh giá người tư vấn
+                                    Đánh giá
                                   </button>
                                 )}
-                            </p>
+                            </div>
                             <p className="text-gray-800 mt-1">{comment.text}</p>
 
                             {comment?.Images && comment.Images.length > 0 && (

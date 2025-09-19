@@ -11,6 +11,7 @@ import SmallCard from "../components/Post/SmallCard";
 import formatDate from "../utils/formatDate";
 import { useNavigate } from "react-router";
 import Select from "react-select";
+import customStyles from "../utils/inputSelectStyles";
 
 export default function NewsPage() {
   const navigate = useNavigate();
@@ -109,7 +110,6 @@ export default function NewsPage() {
       </header>
 
       <section className="mb-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Bên trái: Tin nổi bật */}
         <div className="lg:col-span-2">
           <h2 className="text-2xl font-bold mb-4">Tin nổi bật</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -120,7 +120,6 @@ export default function NewsPage() {
           </div>
         </div>
 
-        {/* Bên phải: Tin mới nhất */}
         <aside>
           <h2 className="text-2xl font-bold mb-4">Tin mới nhất</h2>
           <div className="flex flex-col gap-4">
@@ -131,7 +130,7 @@ export default function NewsPage() {
         </aside>
       </section>
 
-      <div className="mb-6 ml-full w-full  flex gap-3 items-center ">
+      <div className="mb-6 ml-full w-full   flex gap-3 items-center ">
         <Select
           options={majorsData}
           value={selectedMajor}
@@ -139,6 +138,8 @@ export default function NewsPage() {
             setSelectedMajor(val);
             setPage(1);
           }}
+          className="w-[350px]"
+          styles={customStyles}
           placeholder="Lọc theo chuyên ngành..."
           isClearable
         />

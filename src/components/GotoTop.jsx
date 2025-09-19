@@ -25,7 +25,7 @@ const GoToTop = () => {
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 right-6 bg-[#083970] hover:bg-[#062a54] text-white p-3 rounded-full shadow-lg transition-all duration-300"
+      className="fixed top-1/2 right-6 bg-[#083970] hover:bg-[#062a54] text-white p-3 rounded-full shadow-lg transition-all duration-300"
     >
       <FaArrowUp className="w-5 h-5 fill-white" />
     </button>

@@ -91,7 +91,7 @@ const StoryList = () => {
 
   if (displayedStories.length === 0) return null;
   return (
-    <div className="relative w-full">
+    <div className="relative w-full bg-slate-100 shadow-sm rounded-md mb-2">
       <div
         ref={containerRef}
         className="w-full flex overflow-x-auto gap-4 px-4 py-2 scrollbar-hide"
@@ -108,6 +108,7 @@ const StoryList = () => {
                 size="w-16 h-16 rounded-full border-2 border-blue-500 object-cover"
                 name={user.name}
                 src={user.avatar}
+                userId={user.userId}
               />
             </div>
             <p className="text-sm mt-1 text-center truncate w-16">

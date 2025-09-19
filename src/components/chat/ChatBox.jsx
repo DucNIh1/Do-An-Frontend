@@ -27,7 +27,7 @@ export default function ChatBox() {
   const menuRef = useRef(null);
   const { selectedConversation, closeConversation } = useChat();
   const { conversation, receiver } = selectedConversation || {};
-  const receiverId = receiver?.userId;
+  const receiverId = receiver?.userId || receiver?.id;
   const [text, setText] = useState("");
   const [selectedImages, setSelectedImages] = useState([]);
   const messagesEndRef = useRef(null);

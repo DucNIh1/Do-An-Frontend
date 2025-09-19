@@ -45,8 +45,7 @@ const Register = () => {
         toast.success(data.message || "Vui lòng xác minh email");
         return;
       }
-      toast.success(data.message || "Đăng ký thành công");
-      navigate("/");
+      navigate("/login");
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Đăng ký thất bại");

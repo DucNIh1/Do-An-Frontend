@@ -11,6 +11,8 @@
     "i18n:extract": "i18next"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.16",
+    "@floating-ui/react-dom": "^2.1.6",
     "@hookform/resolvers": "^5.2.1",
     "@react-oauth/google": "^0.12.2",
     "@tailwindcss/vite": "^4.1.11",

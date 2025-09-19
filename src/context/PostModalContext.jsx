@@ -20,7 +20,6 @@ export const PostModalProvider = ({ children }) => {
   });
 
   const openPostModal = (options) => {
-    console.log("openPostModal called with options:", options);
     if (options?.post) {
       setPostData(options.post);
       setPostId(null);
@@ -36,7 +35,6 @@ export const PostModalProvider = ({ children }) => {
   };
 
   const currentPost = postData || fetchedPost;
-  console.log("Current Post:", currentPost);
   return (
     <PostModalContext.Provider
       value={{

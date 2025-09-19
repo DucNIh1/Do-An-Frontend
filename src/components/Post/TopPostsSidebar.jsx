@@ -1,4 +1,3 @@
-import React from "react";
 import { AiOutlineLike } from "react-icons/ai";
 import { FaRegCommentDots } from "react-icons/fa6";
 import UserAvatar from "../CommonAvatar";
@@ -39,6 +38,7 @@ const TopPostsSidebar = ({ topPosts, loadingTopPosts, setSelectedPost }) => {
                 <UserAvatar
                   name={post.author?.name}
                   src={post.author?.avatar}
+                  userId={post.author?.id}
                   size="w-10 h-10 mt-1 flex-shrink-0"
                 />
                 <div className="flex-1 overflow-hidden">

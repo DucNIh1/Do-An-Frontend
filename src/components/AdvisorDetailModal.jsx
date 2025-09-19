@@ -6,7 +6,6 @@ import UserAvatar from "./CommonAvatar";
 Modal.setAppElement("#root");
 export default function AdvisorDetailModal({ advisor, onClose }) {
   if (!advisor) return null;
-  console.log(advisor);
   return (
     <Modal
       isOpen={!!advisor}
@@ -14,7 +13,7 @@ export default function AdvisorDetailModal({ advisor, onClose }) {
       className="modal-content-advisor fixed top-[10%] left-1/2 -translate-x-1/2 shadow-sm"
       overlayClassName="modal-overlay-advisor"
     >
-      <div className="bg-white rounded-lg shadow-2xl p-6 relative max-w-2xl mx-auto my-8">
+      <div className="bg-white rounded-lg shadow-2xl p-6 relative w-full max-w-2xl mx-auto my-8">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors"
@@ -26,6 +25,7 @@ export default function AdvisorDetailModal({ advisor, onClose }) {
           <UserAvatar
             src={advisor.avatar}
             name={advisor.name}
+            userId={advisor.id}
             size="w-24 h-24 border-4 border-indigo-500 mb-2"
           />
 
@@ -64,6 +64,7 @@ export default function AdvisorDetailModal({ advisor, onClose }) {
                     <UserAvatar
                       src={rating.rater?.avatar}
                       name={rating.rater?.name}
+                      userId={rating?.rater?.id}
                       size="w-24 h-24 border-4 border-indigo-500 mb-2"
                     />
                     <div>

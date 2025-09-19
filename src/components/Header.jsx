@@ -89,7 +89,8 @@ const Header = () => {
         <img
           src="/logo/logo.svg"
           alt="Logo cổng thông tin tuyển sinh"
-          className="w-[220px] sm:w-[300px]"
+          className="w-[220px] sm:w-[300px] cursor-pointer"
+          onClick={() => navigate("/")}
         />
 
         <nav className="hidden md:flex items-center justify-center gap-8">
@@ -190,6 +191,7 @@ const Header = () => {
                   <UserAvatar
                     src={user.avatar}
                     alt={user.name}
+                    userId={user.id}
                     name={user.name}
                   />
                   <span className="text-sm font-medium text-gray-700 max-w-20 truncate">
@@ -209,6 +211,7 @@ const Header = () => {
                         <UserAvatar
                           src={user.avatar}
                           alt={user.name}
+                          userId={user.id}
                           size="w-10 h-10"
                           name={user.name}
                         />
@@ -305,6 +308,7 @@ const Header = () => {
                       src={user.avatar}
                       alt={user.name}
                       name={user.name}
+                      userId={user.id}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
