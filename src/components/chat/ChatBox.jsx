@@ -31,7 +31,9 @@ export default function ChatBox() {
   const [text, setText] = useState("");
   const [selectedImages, setSelectedImages] = useState([]);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isInitialLoadRef = useRef(true);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -47,6 +49,7 @@ export default function ChatBox() {
       getNextPageParam: (lastPage) => lastPage.pagination?.nextCursor,
       enabled: !!conversation?.id || !!receiverId,
     });
+
   const allMessages = React.useMemo(() => {
     return (
       data?.pages
@@ -113,24 +116,32 @@ export default function ChatBox() {
     },
   });
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleFetchNextPage = async () => {
+    if (!messagesContainerRef.current) return;
+    const container = messagesContainerRef.current;
+    const scrollHeightBefore = container.scrollHeight;
+
+    await fetchNextPage();
+
+    const scrollHeightAfter = container.scrollHeight;
+    container.scrollTop =
+      scrollHeightAfter - scrollHeightBefore + container.scrollTop;
+  };
+
   useEffect(() => {
     if (!socket) return;
-
     const handleNewMessage = ({ conversationId: convId, message }) => {
       const activeConvId = conversation?.id || receiver?.conversationId;
-
-      if (convId === activeConvId) {
-        if (message.sender?.id === currentUser.id) return;
-
+      if (convId === activeConvId && message.sender?.id !== currentUser.id) {
         queryClient.setQueryData(["messages", activeConvId], (oldData) => {
           if (!oldData) return oldData;
-
           const lastPage = oldData.pages[oldData.pages.length - 1];
-          const messageExists = lastPage.messages.some(
-            (msg) => msg.id === message.id
-          );
-          if (messageExists) return oldData;
-
+          if (lastPage.messages.some((msg) => msg.id === message.id))
+            return oldData;
           return {
             ...oldData,
             pages: [
@@ -142,11 +153,9 @@ export default function ChatBox() {
             ],
           };
         });
-
         scrollToBottom();
       }
     };
-
     socket.on("newMessage", handleNewMessage);
     return () => socket.off("newMessage", handleNewMessage);
   }, [
@@ -157,12 +166,13 @@ export default function ChatBox() {
     queryClient,
   ]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    if (!messagesContainerRef.current) return;
+    if (isInitialLoadRef.current && allMessages.length > 0) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+      isInitialLoadRef.current = false;
+    }
   }, [allMessages]);
 
   const handleFileChange = (event) => {
@@ -257,11 +267,14 @@ export default function ChatBox() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-2 space-y-2"
+      >
         {hasNextPage && (
           <button
             disabled={isFetchingNextPage}
-            onClick={() => fetchNextPage()}
+            onClick={handleFetchNextPage}
             className="text-sm text-deepBlue hover:underline mx-auto block"
           >
             {isFetchingNextPage ? "Đang tải..." : "Xem thêm"}

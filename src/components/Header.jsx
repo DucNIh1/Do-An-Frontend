@@ -27,7 +27,7 @@ const Header = () => {
   const navLinks = [
     { name: "Trang chủ", path: "/" },
     { name: "Tư vấn hỏi đáp", path: "/tu-van-hoi-dap" },
-    { name: "Bài đăng", path: "/tin-tuc" },
+    { name: "Tin tức", path: "/tin-tuc" },
   ];
 
   useEffect(() => {

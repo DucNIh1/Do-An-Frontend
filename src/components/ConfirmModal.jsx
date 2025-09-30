@@ -7,7 +7,7 @@ const variants = {
   warning: {
     Icon: IoWarningOutline,
     iconColor: "text-red-500",
-    confirmButtonColor: "bg-red-600 hover:bg-opacity-90",
+    confirmButtonColor: "bg-crimsonRed hover:bg-opacity-90",
     title: "Cảnh báo",
   },
   notice: {

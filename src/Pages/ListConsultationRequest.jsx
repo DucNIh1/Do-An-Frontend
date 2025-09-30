@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useContext, useState } from "react";
-import { MdRefresh } from "react-icons/md";
+import { MdRefresh, MdDelete } from "react-icons/md";
 import axiosConfig from "../axios/config";
 import ConfirmModal from "../components/ConfirmModal";
 import useDebounce from "../hooks/useDebounce";
@@ -28,6 +28,7 @@ export default function ConsultationRequestsTable() {
 
   const [modalState, setModalState] = useState({
     isOpen: false,
+    type: null,
     request: null,
     nextStatus: null,
   });
@@ -66,28 +67,35 @@ export default function ConsultationRequestsTable() {
     },
   });
 
-  const { data: majorsData } = useQuery({
-    queryKey: ["majors"],
-    queryFn: async () => {
-      const res = await axiosConfig.get("/api/majors", {
-        params: { limit: 1000 },
-      });
-      return res.data.majors.map((m) => ({
-        value: m.id,
-        label: m.name,
-      }));
+  const deleteMutation = useMutation({
+    mutationFn: (id) => axiosConfig.delete(`/api/consultation-requests/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["consultationRequests"] });
+      closeModal();
     },
   });
 
   const closeModal = () =>
-    setModalState({ isOpen: false, request: null, nextStatus: null });
+    setModalState({
+      isOpen: false,
+      type: null,
+      request: null,
+      nextStatus: null,
+    });
 
   const handleConfirm = () => {
-    if (!modalState.request || !modalState.nextStatus) return;
-    updateStatusMutation.mutate({
-      id: modalState.request.id,
-      status: modalState.nextStatus,
-    });
+    if (!modalState.request) return;
+
+    if (modalState.type === "status" && modalState.nextStatus) {
+      updateStatusMutation.mutate({
+        id: modalState.request.id,
+        status: modalState.nextStatus,
+      });
+    }
+
+    if (modalState.type === "delete") {
+      deleteMutation.mutate(modalState.request.id);
+    }
   };
 
   if (isLoading) return <div className="p-4">Đang tải...</div>;
@@ -110,45 +118,36 @@ export default function ConsultationRequestsTable() {
     REJECTED: "bg-red-200 text-red-800",
   };
 
-  const customStyles = {
-    control: (provided) => ({
-      ...provided,
-      minHeight: "40px",
-      height: "42px",
-    }),
-    valueContainer: (provided) => ({
-      ...provided,
-      height: "42px",
-      padding: "0 8px",
-    }),
-    input: (provided) => ({
-      ...provided,
-      margin: 0,
-      padding: 0,
-    }),
-    indicatorsContainer: (provided) => ({
-      ...provided,
-      height: "42px",
-    }),
-  };
-
-  const modalContent = modalState.nextStatus
-    ? {
-        variant: "notice",
-        title: "Thay đổi trạng thái?",
-        message: (
-          <span>
-            Bạn có chắc chắn muốn đổi trạng thái của yêu cầu{" "}
-            <strong>{modalState.request?.fullName}</strong> thành{" "}
-            <strong>{statusLabels[modalState.nextStatus]}</strong>?
-          </span>
-        ),
-        confirmText: "Xác nhận",
-      }
-    : null;
+  const modalContent =
+    modalState.type === "status" && modalState.nextStatus
+      ? {
+          variant: "notice",
+          title: "Thay đổi trạng thái?",
+          message: (
+            <span>
+              Bạn có chắc chắn muốn đổi trạng thái của yêu cầu{" "}
+              <strong>{modalState.request?.fullName}</strong> thành{" "}
+              <strong>{statusLabels[modalState.nextStatus]}</strong>?
+            </span>
+          ),
+          confirmText: "Xác nhận",
+        }
+      : modalState.type === "delete"
+      ? {
+          variant: "warning",
+          title: "Xoá yêu cầu?",
+          message: (
+            <span>
+              Bạn có chắc chắn muốn xoá yêu cầu tư vấn của{" "}
+              <strong>{modalState.request?.fullName}</strong> không?
+            </span>
+          ),
+          confirmText: "Xoá",
+        }
+      : null;
 
   return (
-    <div className="p-6 bg-gray-50  min-h-screen text-[#344054] ">
+    <div className="p-6 bg-gray-50 min-h-screen text-[#344054] ">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h1 className="text-xl font-semibold">Quản lý yêu cầu tư vấn</h1>
         <button
@@ -207,8 +206,8 @@ export default function ConsultationRequestsTable() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full border border-gray-200  rounded">
-          <thead className="bg-gray-100 0">
+        <table className="w-full border border-gray-200 rounded">
+          <thead className="bg-gray-100">
             <tr>
               <th className="px-3 py-2 text-left font-semibold min-w-[120px]">
                 Tên
@@ -231,7 +230,7 @@ export default function ConsultationRequestsTable() {
           </thead>
           <tbody>
             {requests.map((r) => (
-              <tr key={r.id} className="border-t border-gray-200 ">
+              <tr key={r.id} className="border-t border-gray-200">
                 <td className="px-3 py-2">{r.fullName}</td>
                 <td className="px-3 py-2">{r.email}</td>
                 <td className="px-3 py-2">{r.phoneNumber}</td>
@@ -248,17 +247,18 @@ export default function ConsultationRequestsTable() {
                 <td className="px-3 py-2 text-center">
                   {new Date(r.createdAt).toLocaleString("vi-VN")}
                 </td>
-                <td className="px-3 py-2 text-center">
+                <td className="px-3 py-2 text-center flex items-center justify-center gap-2">
                   <select
                     value=""
                     onChange={(e) =>
                       setModalState({
                         isOpen: true,
+                        type: "status",
                         request: r,
                         nextStatus: e.target.value,
                       })
                     }
-                    className="px-2 py-1 border rounded text-sm "
+                    className="px-2 py-1 border rounded text-sm"
                   >
                     <option value="">Đổi trạng thái...</option>
                     {Object.entries(statusLabels).map(([key, label]) => (
@@ -267,6 +267,20 @@ export default function ConsultationRequestsTable() {
                       </option>
                     ))}
                   </select>
+
+                  <button
+                    onClick={() =>
+                      setModalState({
+                        isOpen: true,
+                        type: "delete",
+                        request: r,
+                        nextStatus: null,
+                      })
+                    }
+                    className="p-2 bg-crimsonRed hover:bg-red-700  rounded"
+                  >
+                    <MdDelete className="fill-white" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -308,7 +322,9 @@ export default function ConsultationRequestsTable() {
           message={modalContent.message}
           confirmText={modalContent.confirmText}
           cancelText="Hủy"
-          isConfirming={updateStatusMutation.isPending}
+          isConfirming={
+            updateStatusMutation.isPending || deleteMutation.isPending
+          }
         />
       )}
     </div>

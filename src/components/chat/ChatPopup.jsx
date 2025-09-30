@@ -114,8 +114,8 @@ export default function ChatPopup({ onClose }) {
                 </div>
 
                 <p className="text-xs text-gray-400 whitespace-nowrap">
-                  {c.updatedAt
-                    ? formatDistanceToNow(new Date(c.updatedAt), {
+                  {c?.messages[0]?.createdAt
+                    ? formatDistanceToNow(new Date(c.messages[0].createdAt), {
                         addSuffix: true,
                         locale: vi,
                       })

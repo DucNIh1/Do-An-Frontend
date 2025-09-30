@@ -16,6 +16,7 @@ import TopPostsSidebar from "../components/Post/TopPostsSidebar";
 import AdvisorList from "../components/AdvisorList";
 import axiosConfig from "../axios/config";
 import customStyles from "../utils/inputSelectStyles";
+
 const QnAForum = () => {
   const { user } = useContext(AuthContext);
 
@@ -64,6 +65,7 @@ const QnAForum = () => {
     queryKey: ["topPosts"],
     queryFn: () => getTopPostsAPI(5),
   });
+
   const majorOptions =
     majorsData?.map((m) => ({ value: m.id, label: m.name })) || [];
 
@@ -76,17 +78,37 @@ const QnAForum = () => {
   const allPosts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
-    <div className="flex flex-col lg:flex-row w-full min-h-screen py-5 md:py-10 px-4 sm:px-8 md:px-12 lg:px-20 bg-gray-50 gap-8">
-      <section className="w-full lg:w-3/5 ">
+    <div className="flex flex-col lg:flex-row w-full min-h-screen py-6 md:py-10 px-4 sm:px-8 md:px-12 lg:px-20 bg-gray-50 gap-8">
+      <aside className="w-full lg:w-2/5 lg:sticky lg:top-20 flex flex-col gap-6 h-fit order-first lg:order-last">
+        <div className="bg-white rounded-2xl shadow-md p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+            Tư vấn viên
+          </h2>
+          <AdvisorList />
+        </div>
+        <div className="bg-white rounded-2xl shadow-md p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+            Câu hỏi nổi bật
+          </h2>
+          <TopPostsSidebar
+            loadingTopPosts={loadingTopPosts}
+            topPosts={topPosts}
+            setSelectedPost={(post) => setSelectedPost(post)}
+          />
+        </div>
+      </aside>
+
+      <section className="w-full lg:w-3/5">
         {user && (
-          <div>
+          <div className="mb-6">
             <StoryList />
-            <div className="w-full md:w-auto flex-shrink-0 my-2 flex justify-end mb-5">
+            <div className="flex justify-end mt-4">
               <CreatePostModal />
             </div>
           </div>
         )}
-        <div className="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col sm:flex-row items-center gap-4">
+
+        <div className="bg-white p-5 rounded-2xl shadow-md flex flex-col sm:flex-row items-center gap-4">
           <div className="w-full sm:w-1/3">
             <Select
               options={majorOptions}
@@ -99,69 +121,49 @@ const QnAForum = () => {
             />
           </div>
           <div className="relative w-full sm:flex-1">
-            <IoSearchSharp className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 text-xl" />
+            <IoSearchSharp className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 text-lg" />
             <input
               type="text"
-              placeholder="Tìm kiếm câu hỏi theo tiêu đề..."
+              placeholder="Tìm kiếm câu hỏi..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-[42px] border focus:outline-deepBlue border-gray-300 rounded-md  transition-colors pl-10 pr-4 text-sm"
+              className="w-full h-[44px] border border-gray-300 rounded-xl pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-deepBlue transition-all"
             />
           </div>
         </div>
-        <div className="flex flex-col gap-5 mt-5">
+
+        <div className="flex flex-col gap-6 mt-6">
           {isLoading ? (
             <>
               <PostSkeleton />
               <PostSkeleton />
               <PostSkeleton />
-              <PostSkeleton />
             </>
           ) : error ? (
-            <p className="text-center text-red-500">
+            <p className="text-center text-red-500 py-6">
               Đã có lỗi xảy ra khi tải bài viết.
             </p>
           ) : allPosts.length > 0 ? (
             allPosts.map((post) => <Post key={post.id} post={post} />)
           ) : (
-            <p className="text-center text-gray-500 mt-10">
+            <p className="text-center text-gray-500 mt-12">
               Không tìm thấy bài viết nào.
             </p>
           )}
 
           <div ref={ref} className="h-1"></div>
-
           {isFetchingNextPage && (
-            <div className="text-center py-4 text-gray-600">
+            <div className="text-center py-4 text-gray-500 text-sm">
               Đang tải thêm...
             </div>
           )}
-
           {!hasNextPage && !isLoading && allPosts.length > 0 && (
-            <div className="text-center py-4 text-gray-500">
+            <div className="text-center py-4 text-gray-400 text-sm">
               Đã xem hết tất cả bài viết.
             </div>
           )}
         </div>
       </section>
-      <aside className="w-full lg:w-2/5 h-screen sticky top-20 flex flex-col gap-8">
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
-            Tư vấn viên
-          </h2>
-          <AdvisorList />
-        </div>
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
-            Câu hỏi nổi bật
-          </h2>
-          <TopPostsSidebar
-            loadingTopPosts={loadingTopPosts}
-            topPosts={topPosts}
-            setSelectedPost={(post) => setSelectedPost(post)}
-          />
-        </div>
-      </aside>
 
       {selectedPost && (
         <PostModal

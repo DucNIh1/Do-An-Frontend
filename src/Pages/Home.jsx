@@ -101,7 +101,7 @@ const Home = () => {
         <div className="max-w-6xl mx-auto text-center mb-8">
           <h2 className="text-xl font-bold text-deepBlue flex items-center justify-center gap-2">
             <span className="bg-deepBlue text-white px-4 py-2 rounded-tl-2xl rounded-br-2xl">
-              <IoEarthOutline />
+              <IoEarthOutline className="fill-white" />
             </span>{" "}
             KHOA HỌC CÔNG NGHỆ
           </h2>

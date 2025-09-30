@@ -91,7 +91,7 @@ const StoryList = () => {
 
   if (displayedStories.length === 0) return null;
   return (
-    <div className="relative w-full bg-slate-100 shadow-sm rounded-md mb-2">
+    <div className="relative w-full  shadow-sm rounded-md mb-2">
       <div
         ref={containerRef}
         className="w-full flex overflow-x-auto gap-4 px-4 py-2 scrollbar-hide"

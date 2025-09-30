@@ -1,55 +1,74 @@
-// src/components/SliderSection.jsx
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
-import { Navigation, Pagination } from "swiper/modules";
-
-const data = [
-  {
-    image: "/image_explore/a1.png",
-    text: "Môi trường học tập năng động, hiện đại, giúp sinh viên phát triển bản thân",
-  },
-  {
-    image: "/image_explore/a5.png",
-    text: "Chương trình đào tạo cập nhật, gắn đào tạo với nhu cầu thực tế của doanh nghiệp",
-  },
-  {
-    image: "/image_explore/ngoaingu.png",
-    text: "Cơ sở vật chất hiện đại đáp ứng nhu cầu học tập và phát triển toàn diện",
-  },
-  {
-    image: "/image_explore/santruong.png",
-    text: "Đội ngũ giảng viên giỏi, tâm huyết, yêu nghề và luôn hỗ trợ sinh viên",
-  },
-];
+import "swiper/css/pagination";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { useQuery } from "@tanstack/react-query";
+import axiosConfig from "../axios/config";
+import { useNavigate } from "react-router";
+import formatDate from "../utils/formatDate";
 
 export default function SliderSection() {
+  const navigate = useNavigate();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["featuredPostsSlider"],
+    queryFn: async () => {
+      const res = await axiosConfig.get("/api/posts", {
+        params: {
+          isFeatured: true,
+          sort: "desc",
+          limit: 10,
+          isFromSchool: true,
+        },
+      });
+      return res.data;
+    },
+  });
+
+  if (isLoading) {
+    return <div className="text-center py-10">Đang tải...</div>;
+  }
+
   return (
-    <div className=" py-10">
+    <div className="py-10">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-textBlue mb-4">
-          TẠI SAO NÊN CHỌN ĐẠI HỌC CÔNG NGHIỆP HÀ NỘI
+          TIN NỔI BẬT TỪ ĐẠI HỌC CÔNG NGHIỆP HÀ NỘI
         </h2>
         <p className="text-gray-600 w-full max-w-lg text-center mx-auto">
-          Trường Đại học Đại HỌC CÔNG NGHIỆP HÀ NỘI mang đến môi trường học hiện
-          đại, thân thiện và chuyên nghiệp.
+          Cập nhật nhanh những bài viết nổi bật, sự kiện và thông tin quan
+          trọng.
         </p>
       </div>
       <Swiper
         spaceBetween={20}
         slidesPerView={3}
-        navigation
         pagination={{ clickable: true }}
-        modules={[Navigation, Pagination]}
+        autoplay={{ delay: 4000 }}
+        loop
+        modules={[Pagination, Autoplay]}
         className="px-10"
       >
-        {data.map((item, index) => (
-          <SwiperSlide key={index}>
+        {data?.posts?.map((post) => (
+          <SwiperSlide key={post.id}>
             <div
-              className="h-80 bg-cover bg-center rounded-xl shadow-md flex items-end p-4 text-white text-sm"
-              style={{ backgroundImage: `url(${item.image})` }}
+              className="h-80 bg-cover bg-center rounded-xl shadow-md flex flex-col justify-end cursor-pointer group overflow-hidden"
+              style={{
+                backgroundImage: `url(${
+                  post.images?.[0]?.url || "/default_news.png"
+                })`,
+              }}
+              onClick={() => navigate(`/tin-tuc/${post.id}`)}
             >
-              <div className="bg-black/50 p-3 rounded-md">{item.text}</div>
+              <div className="bg-black/50 p-4 text-white min-h-[90px] transition group-hover:bg-black/80">
+                <div className="text-xs text-gray-300">
+                  {formatDate(post.createdAt)}
+                </div>
+                <h3 className="font-semibold line-clamp-2 text-white">
+                  {post.title}
+                </h3>
+              </div>
             </div>
           </SwiperSlide>
         ))}
