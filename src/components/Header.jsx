@@ -283,14 +283,62 @@ const Header = () => {
                 </NavLink>
               </li>
             ))}
-            <li>
-              <NavLink
-                to={"/danh-sach-tu-van"}
-                className="w-full bg-deepBlue px-4 py-2 rounded-3xl text-white text-sm font-medium hover:opacity-90 transition-all"
-              >
-                Danh sách tư vấn
-              </NavLink>
-            </li>
+
+            {user && user.role === "ADVISOR" && (
+              <li>
+                <NavLink
+                  to={"/danh-sach-tu-van"}
+                  onClick={() => setIsOpen(false)}
+                  className="w-full bg-deepBlue px-4 py-2 rounded-3xl text-white text-sm font-medium hover:opacity-90 transition-all"
+                >
+                  Danh sách chờ tư vấn
+                </NavLink>
+              </li>
+            )}
+
+            {user && (
+              <li className="flex gap-3 pt-2 border-t">
+                <div className="relative" ref={chatRef}>
+                  <button
+                    className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
+                    onClick={() => {
+                      setIsChatOpen(!isChatOpen);
+                      setIsNotificationsOpen(false);
+                      setIsHasNewMessage(false);
+                    }}
+                  >
+                    <IoChatbubblesOutline className="w-6 h-6 text-gray-700" />
+                    {isHasNewMessage && (
+                      <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+                    )}
+                  </button>
+                  {isChatOpen && (
+                    <ChatPopup onClose={() => setIsChatOpen(false)} />
+                  )}
+                </div>
+
+                <div className="relative" ref={notificationsRef}>
+                  <button
+                    className="p-2.5 rounded-full hover:bg-gray-100 transition-colors"
+                    onClick={() => {
+                      setIsNotificationsOpen(!isNotificationsOpen);
+                      setIsChatOpen(false);
+                      setIsHasNewNoti(false);
+                    }}
+                  >
+                    <IoMdNotificationsOutline className="w-6 h-6 text-gray-700" />
+                    {isHasNewNoti && (
+                      <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+                    )}
+                  </button>
+                  {isNotificationsOpen && (
+                    <NotificationsPopup
+                      onClose={() => setIsNotificationsOpen(false)}
+                    />
+                  )}
+                </div>
+              </li>
+            )}
 
             <li className="pt-3 border-t">
               {!user ? (

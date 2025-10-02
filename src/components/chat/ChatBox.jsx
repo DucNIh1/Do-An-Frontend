@@ -228,7 +228,7 @@ export default function ChatBox() {
   if (!selectedConversation) return null;
 
   return (
-    <div className="fixed bottom-1 right-[90px] w-[350px] h-[500px] flex flex-col border rounded-lg shadow-lg bg-white z-[30000000]">
+    <div className="fixed lg:bottom-1 bottom-32 right-5 lg:right-[90px] w-[350px] h-[500px] flex flex-col border rounded-lg shadow-lg bg-white z-[30000000]">
       <div className="flex items-center justify-between p-2 border-b bg-gray-100">
         <div className="flex">
           <div className="flex items-center gap-2">

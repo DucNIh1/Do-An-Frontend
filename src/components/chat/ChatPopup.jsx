@@ -86,6 +86,7 @@ export default function ChatPopup({ onClose }) {
         ) : (
           data.map((c) => {
             const lastMsg = c.messages?.[0];
+            const hasUnread = c?.hasUnread;
             const lastText = lastMsg
               ? `${lastMsg.sender.name}: ${lastMsg.text || "[File]"}`
               : "Chưa có tin nhắn";
@@ -97,7 +98,9 @@ export default function ChatPopup({ onClose }) {
               <div
                 key={c.id}
                 onClick={() => handleSetSelectedConversation(c, partner)}
-                className="flex items-center gap-3 p-3 hover:bg-blue-50 cursor-pointer transition"
+                className={`flex items-center gap-3 p-3 hover:bg-blue-50 ${
+                  hasUnread ? "bg-blue-50" : ""
+                } cursor-pointer transition`}
               >
                 <UserAvatar
                   size="w-10 h-10"

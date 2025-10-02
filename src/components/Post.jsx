@@ -146,7 +146,6 @@ const Post = ({ post }) => {
         </div>
       </div>
 
-      {/* Content */}
       <div className="px-4 pb-3">
         {post.title && (
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 leading-tight">
@@ -170,7 +169,7 @@ const Post = ({ post }) => {
 
       {post.images?.length > 0 && (
         <div
-          className={`grid gap-1 w-full rounded-lg overflow-hidden
+          className={`grid gap-1  w-full rounded-lg overflow-hidden
           ${post.images.length === 1 ? "grid-cols-1" : ""}
           ${post.images.length === 2 ? "grid-cols-2" : ""}
           ${
@@ -198,7 +197,7 @@ const Post = ({ post }) => {
                 <img
                   src={imageSrc}
                   alt={`Hình ${index + 1}`}
-                  className="w-full h-40 sm:h-60 object-cover transition-transform duration-300"
+                  className="w-full  h-full object-cover transition-transform duration-300"
                   onError={() => handleImageError(imageId)}
                 />
                 {index === 3 && post.images.length > 4 && (

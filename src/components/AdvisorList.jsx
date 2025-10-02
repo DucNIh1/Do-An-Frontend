@@ -111,7 +111,7 @@ export default function AdvisorList() {
         <>
           <button
             onClick={goToPrevious}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4  bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors"
             aria-label="Previous advisors"
           >
             <FaChevronLeft className="w-4 h-4 text-gray-600" />
@@ -119,7 +119,7 @@ export default function AdvisorList() {
 
           <button
             onClick={goToNext}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4  bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors"
             aria-label="Next advisors"
           >
             <FaChevronRight className="w-4 h-4 text-gray-600" />
